@@ -41,6 +41,15 @@ sys_munmap:
 
 	ret
 
+public sys_nanosleep
+sys_nanosleep:
+	use64
+
+	mov rax, 35
+	syscall
+
+	ret
+
 public sys_clone
 sys_clone:
 	use64
@@ -48,9 +57,30 @@ sys_clone:
 	mov rax, 56
 	syscall
 
-	mov rsp, rdi     ; MAJOR NOTE - This is a hack to use for clone!
+	mov rdi, rsp     ; MAJOR NOTE - This is a hack to use for clone!
 	ret              ; Requires a structure which contains the thread
                      ; entrypoint! [Read include/cpu/thread.h]
 	                 ; Further Reading:
                      ;     https://nullprogram.com/blog/2023/03/23/
+
+public sys_exit
+sys_exit:
+	use64
+
+	mov rax, 60
+	syscall
+
+	ret              ; This shouldn't be reached...
+
+public sys_futex
+sys_futex:
+	use64
+	pushq r10
+
+	mov rax, 202
+	mov r10, rcx
+	syscall
+
+	popq r10
+	ret
 

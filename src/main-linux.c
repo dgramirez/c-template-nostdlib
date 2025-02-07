@@ -5,7 +5,14 @@
 #include "mem/memfn.h"
 #include "mem/arena.h"
 #include "mem/pool.h"
-#include "cpu/thread.h"
+#include "cpu/thread-linux.h"
+
+local void
+mmm_sleep(void *args)
+{
+	struct timespec *ts = (struct timespec *)args;
+	sys_nanosleep(ts, 0);
+}
 
 local int
 s8_print(s8 *s)
@@ -23,6 +30,12 @@ int
 main(int argc,
      char **argv)
 {
+	
+	StackHead *sh = (StackHead *)((u8 *)mmap_anon(KB(4)) + KB(4) - sizeof(StackHead));
+	struct timespec ts;
+	ts.tv_sec = 3;
+	create_thread(sh, mmm_sleep, &ts);
+
 	// Static s8
 	s8 hw = s8("Hello, World!\n");
 	s8_print(&hw);
@@ -34,10 +47,12 @@ main(int argc,
 	hw2.cap = KB(4);
 	hw2.data = mmap_anon(hw2.cap);
 
-	s8 hs = s8("Hello, Sailor!");
+	s8 hs = s8("Waiting for nanosleep futex. . .");
 	buf8_append(&hw2, hs.data, hs.len);
 	buf8_append_lf(&hw2);
 	buf8_flush(&hw2);
+
+	futex_wait(&sh->join_futex);
 
 	hs = s8("Pi: ");	
 	float p = 3.14159265;
@@ -143,7 +158,6 @@ main(int argc,
 	buf8_append(&hw2, (u8 *)buftest, 256);
 	buf8_append_lf(&hw2);
 	buf8_flush(&hw2);
-
 
 	sys_munmap(&hw2.data, hw2.cap);
 	return 0;

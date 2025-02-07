@@ -6,10 +6,49 @@
 #include "asm/linux-syscall.h"
 #include <linux/futex.h>
 
+typedef void (*FnEntry)(void *);
 typedef struct __attribute((aligned(16))) stack_head {
 	void (*entry)(struct stack_head *);
-	int futex;
+
+	// Thread Local Data
+	FnEntry fn_entry;
+	void *args;
+	u32 join_futex;
 } StackHead;
+
+local long
+futex_wait(u32 *futex)
+{
+	return sys_futex((u32 *)futex, FUTEX_WAIT, 0, 0, 0, 0);
+}
+
+local long
+futex_wake(u32 *futex)
+{
+	return sys_futex((u32 *)futex, FUTEX_WAKE, 0, 0, 0, 0);
+}
+
+local void
+thread_entry(struct stack_head *h)
+{
+	h->fn_entry(h->args);
+	__atomic_store_n(&h->join_futex, 1, __ATOMIC_SEQ_CST);
+	futex_wake(&h->join_futex);
+	sys_exit(0);
+}
+
+local long
+create_thread(StackHead *s,
+              FnEntry entry,
+			  void *args)
+{
+	s->entry = thread_entry;
+	s->fn_entry = entry;
+	s->args = args;
+	s->join_futex = 0;
+
+	return sys_clone(0x50f00, s, 0, 0, 0);
+}
 
 //typedef void (*pfn_entry)(struct stack_head *);
 //
