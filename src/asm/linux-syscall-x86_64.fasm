@@ -11,11 +11,38 @@
 ;              pushq r10 to save its value, then popq r10 prior to ret.
 ; Reminder #3: [rdi] [rsi] [rdx] [rcx -> r10] [r8] [r9]
 
+public sys_read
+sys_read:
+	use64
+
+	mov rax, 0
+	syscall
+
+	ret
+
 public sys_write
 sys_write:
 	use64
 
 	mov rax, 1
+	syscall
+
+	ret
+
+public sys_close
+sys_close:
+	use64
+
+	mov rax, 3
+	syscall
+
+	ret
+
+public sys_lseek
+sys_lseek:
+	use64
+	
+	mov rax, 8
 	syscall
 
 	ret
@@ -82,5 +109,14 @@ sys_futex:
 	syscall
 
 	popq r10
+	ret
+
+public sys_openat
+sys_openat:
+	use64
+	
+	mov rax, 257
+	syscall
+
 	ret
 
