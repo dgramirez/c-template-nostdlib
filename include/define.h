@@ -39,10 +39,12 @@
 #define lenof(x) (cntof(x) - 1)
 
 #define is_pow2(x) ((x) && !((x) & ((x) - 1)))
-#define align_addr(p, a) ((usz)(p) & ~((a) - 1))
+#define align_addr(p, a) ((usz)(p) & -(a))
 #define align_next(p, a) ((a) + align_addr(p, a))
 #define align_over(p, a) ((usz)(p) & ((a) - 1))
 #define align_pad(p, a)  (((a) - align_over(p, a)) & ((a) - 1))
+
+#define page_size KB(4)
 
 #if defined(_DEBUG)
 	#define assert(x, s) if (!x) *((volatile int*)0) = 0;

@@ -50,6 +50,7 @@ main(int argc,
 	s8 hs = s8("Waiting for nanosleep futex. . .");
 	buf8_append(&hw2, hs.data, hs.len);
 	buf8_append_lf(&hw2);
+	buf8_append_lf(&hw2);
 	buf8_flush(&hw2);
 
 	futex_wait(&sh->join_futex);
@@ -87,6 +88,7 @@ main(int argc,
 	buf8_append(&hw2, hs.data, hs.len);
 	buf8_append_hex_cap(&hw2, hcval);
 	buf8_append_lf(&hw2);
+	buf8_append_lf(&hw2);
 	buf8_flush(&hw2);
 
 	// CPUID
@@ -101,9 +103,39 @@ main(int argc,
 	buf8_append(&hw2, (u8*)(&edx), sizeof(unsigned int));
 	buf8_append(&hw2, (u8*)(&ecx), sizeof(unsigned int));
 	buf8_append_lf(&hw2);
+	buf8_append_lf(&hw2);
 	buf8_flush(&hw2);
 
 	char buftest[256] = {0};
+
+	hs = s8("Current Pointer: ");
+	buf8_append(&hw2, hs.data, hs.len);
+	buf8_append_hex(&hw2, (usz)(&buftest[1]));
+	buf8_append_lf(&hw2);
+
+	hs = s8("In-Alignment Pointer for page alignment: ");
+	buf8_append(&hw2, hs.data, hs.len);
+	buf8_append_hex(&hw2, align_addr(&buftest[1], page_size));
+	buf8_append_lf(&hw2);
+
+	hs = s8("Next-Alignment Pointer for page alignment: ");
+	buf8_append(&hw2, hs.data, hs.len);
+	buf8_append_hex(&hw2, align_next(&buftest[1], page_size));
+	buf8_append_lf(&hw2);
+
+	hs = s8("Pointer value over for page alignment: ");
+	buf8_append(&hw2, hs.data, hs.len);
+	buf8_append_usz(&hw2, align_over(&buftest[1], page_size));
+	buf8_append_lf(&hw2);
+
+	hs = s8("Padding value for page alignment: ");
+	buf8_append(&hw2, hs.data, hs.len);
+	buf8_append_usz(&hw2, align_pad(&buftest[1], page_size));
+	buf8_append_lf(&hw2);
+	buf8_append_lf(&hw2);
+
+	buf8_flush(&hw2);
+
 	buftest[0] = '>';
 	buftest[1] = ' ';
 	hs = s8("Hello, Master!\n");
