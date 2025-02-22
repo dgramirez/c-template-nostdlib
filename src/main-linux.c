@@ -1,6 +1,5 @@
 #include "asm/linux-syscall.h"
 #include "asm/cpuid.h"
-#include "mem/buf8.h"
 #include "mem/s8.h"
 #include "mem/memfn.h"
 #include "mem/arena.h"
@@ -14,14 +13,14 @@ mmm_sleep(void *args)
 	sys_nanosleep(ts, 0);
 }
 
-local int
+local i32
 s8_print(s8 *s)
 {
 	return sys_write(0, s->data, s->len);
 }
 
-local isz
-buf8_write(buf8 *b)
+local i32
+fb8_write(fb8 *b)
 {
 	return sys_write((usz)b->fd, b->data, b->len);
 }
@@ -40,56 +39,56 @@ main(int argc,
 	s8 hw = s8("Hello, World!\n");
 	s8_print(&hw);
 
-	// Dynamic buf8. Note: hw2->fd == 0, aka stdout.
-	os_write = buf8_write;
+	// Dynamic fb8. Note: hw2->fd == 0, aka stdout.
+	os_write = fb8_write;
 
-	buf8 hw2 = {0};
+	fb8 hw2 = {0};
 	hw2.cap = KB(4);
 	hw2.data = mmap_anon(hw2.cap);
 
 	s8 hs = s8("Waiting for nanosleep futex. . .");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_lf(&hw2);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_lf(&hw2);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	futex_wait(&sh->join_futex);
 
 	hs = s8("Pi: ");	
 	float p = 3.14159265;
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_f64(&hw2, p);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_f64(&hw2, p);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	hs = s8("Positive size_t Value: ");
 	usz uval = 12345678901234567;
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_usz(&hw2, uval);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_usz(&hw2, uval);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	hs = s8("Negative size_t Value: ");
 	isz ival = -9876543210987654;
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_isz(&hw2, ival);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_isz(&hw2, ival);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	hs = s8("Hex Value (lower): ");
 	usz hval = 0xCAFEBABE;
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_hex(&hw2, hval);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_hex(&hw2, hval);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	hs = s8("Hex Value (capital): ");
 	usz hcval = 0xCAFED00D;
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_hex_cap(&hw2, hcval);
-	buf8_append_lf(&hw2);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_hex_cap(&hw2, hcval);
+	fb8_append_lf(&hw2);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	// CPUID
 	unsigned int eax, ebx, ecx, edx;
@@ -98,50 +97,50 @@ main(int argc,
 	cpuid_native(&eax, &ebx, &ecx, &edx);
 	
 	hs = s8("CPUID Vendor: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append(&hw2, (u8*)(&ebx), sizeof(unsigned int));
-	buf8_append(&hw2, (u8*)(&edx), sizeof(unsigned int));
-	buf8_append(&hw2, (u8*)(&ecx), sizeof(unsigned int));
-	buf8_append_lf(&hw2);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_cstr(&hw2, (u8 *)(&ebx), sizeof(unsigned int));
+	fb8_append_cstr(&hw2, (u8 *)(&edx), sizeof(unsigned int));
+	fb8_append_cstr(&hw2, (u8 *)(&ecx), sizeof(unsigned int));
+	fb8_append_lf(&hw2);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	char buftest[256] = {0};
 
 	hs = s8("Current Pointer: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_hex(&hw2, (usz)(&buftest[1]));
-	buf8_append_lf(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_hex(&hw2, (usz)(&buftest[1]));
+	fb8_append_lf(&hw2);
 
 	hs = s8("In-Alignment Pointer for page alignment: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_hex(&hw2, align_addr(&buftest[1], page_size));
-	buf8_append_lf(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_hex(&hw2, align_addr(&buftest[1], page_size));
+	fb8_append_lf(&hw2);
 
 	hs = s8("Next-Alignment Pointer for page alignment: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_hex(&hw2, align_next(&buftest[1], page_size));
-	buf8_append_lf(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_hex(&hw2, align_next(&buftest[1], page_size));
+	fb8_append_lf(&hw2);
 
 	hs = s8("Pointer value over for page alignment: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_usz(&hw2, align_over(&buftest[1], page_size));
-	buf8_append_lf(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_usz(&hw2, align_over(&buftest[1], page_size));
+	fb8_append_lf(&hw2);
 
 	hs = s8("Padding value for page alignment: ");
-	buf8_append(&hw2, hs.data, hs.len);
-	buf8_append_usz(&hw2, align_pad(&buftest[1], page_size));
-	buf8_append_lf(&hw2);
-	buf8_append_lf(&hw2);
+	fb8_append(&hw2, hs);
+	fb8_append_usz(&hw2, align_pad(&buftest[1], page_size));
+	fb8_append_lf(&hw2);
+	fb8_append_lf(&hw2);
 
-	buf8_flush(&hw2);
+	fb8_flush(&hw2);
 
 	buftest[0] = '>';
 	buftest[1] = ' ';
 	hs = s8("Hello, Master!\n");
 	memcpyu_usz(&buftest[2], hs.data, hs.len);
-	buf8_append(&hw2, (u8*)buftest, hs.len + 2);
-	buf8_flush(&hw2);
+	fb8_append_cstr(&hw2, (u8*)buftest, hs.len + 2);
+	fb8_flush(&hw2);
 
 	MArena arena;
 	marena_init(&arena, &buftest[2], 256, 8);
@@ -175,9 +174,9 @@ main(int argc,
 	buftest[128] = '>';
 	buftest[129] = ' ';
 	memmoveu_usz(&buftest[2], &buftest[130], 126);
-	buf8_append(&hw2, (u8 *)buftest, 256);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append_cstr(&hw2, (u8 *)buftest, 256);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	for (int i = 0; i < 256; ++i)
 		buftest[i] = (i % 94) + 32;
@@ -187,9 +186,9 @@ main(int argc,
 	buftest[128] = '>';
 	buftest[129] = ' ';
 	memmoveu_usz(&buftest[130], &buftest[2], 126);
-	buf8_append(&hw2, (u8 *)buftest, 256);
-	buf8_append_lf(&hw2);
-	buf8_flush(&hw2);
+	fb8_append_cstr(&hw2, (u8 *)buftest, 256);
+	fb8_append_lf(&hw2);
+	fb8_flush(&hw2);
 
 	sys_munmap(&hw2.data, hw2.cap);
 	return 0;

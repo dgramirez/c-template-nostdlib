@@ -22,6 +22,7 @@
 #define minmax_bits(x, y) (((x) ^ (y)) & -((x) < (y)))
 #define imin(x, y) ((y) ^ minmax_bits((x), (y)))
 #define imax(x, y) ((x) ^ minmax_bits((x), (y)))
+#define iclamp(l, x, h) imin(imax(x, l), h)
 
 #define isinf(x) (((x) & 0x7FF0000000000000) == 0x7FF0000000000000)
 #define isnan(x) (((x) & 0x7FFFFFFFFFFFFFFF)  > 0x7FF0000000000000)
@@ -47,7 +48,7 @@
 #define page_size KB(4)
 
 #if defined(_DEBUG)
-	#define assert(x, s) if (!x) *((volatile int*)0) = 0;
+	#define assert(x, s) if (!(x)) *((volatile int*)0) = 0;
 #else
 	#define assert(x, s) ;
 #endif

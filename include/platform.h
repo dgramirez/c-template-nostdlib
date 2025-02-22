@@ -45,8 +45,6 @@ typedef size_t   usz;
 typedef float  f32;
 typedef double f64;
 
-typedef int b32;
-
 typedef union {
 	void *pv;
 	u8   *pu8;
