@@ -50,7 +50,7 @@ mpool_init(MPool *out,
 
 	pad = align_pad(chunk_len, align);
 	out->chunk_len = chunk_len + pad;
-	assert((out->end - out->start) >= out->chunk,
+	assert((out->end - out->start) >= out->chunk_len,
 	       "Buffer size is too small to fit one chunk in this pool!");
 
 	mpool_reset(out);
