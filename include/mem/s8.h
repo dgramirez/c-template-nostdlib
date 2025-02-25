@@ -44,9 +44,45 @@ typedef i32 (*pfn_os_write)(fb8 *b);
 local i32 stub_os_write(fb8 *b) {unref(b); return -1;}
 pfn_os_write os_write = stub_os_write;
 
+//////////
+// cstr //
+//////////
+local usz
+c_strlen(char *start)
+{
+	char *end = start;
+	while (*end++);
+
+	return end - start;
+}
+
+local int
+c_streq(const char *s1, const char *s2)
+{
+	while(*s1 && *s2) {
+		if (*s1 != *s2)
+			return 0;
+
+		s1++;
+		s2++;
+	}
+
+	return *s1 == *s2;
+}
+
 ///////////////
 // sb8 / mb8 //
 ///////////////
+local void
+mb8_init(mb8 *mb,
+         void *b,
+         usz len)
+{
+	mb->data = (u8 *)b;
+	mb->cap  = len;
+	mb->len  = 0;
+}
+
 local void
 mb8_cpy(mb8 *dst,
         b8   src)
