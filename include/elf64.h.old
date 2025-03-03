@@ -32,19 +32,6 @@ typedef isz Elf64_Sxword;
 // Helpful Enumerations //
 //////////////////////////
 typedef enum {
-	AT_NULL   = 0,
-	AT_IGNORE = 1,
-	AT_EXECFD = 2,
-	AT_PHDR   = 3,
-	AT_PHENT  = 4,
-	AT_PHNUM  = 5,
-	AT_PAGESZ = 6,
-	AT_BASE   = 7,
-	AT_FLAGS  = 8,
-	AT_ENTRY  = 9
-} AuxvLocations;
-
-typedef enum {
 	EI_MAG0             = 0,
 	EI_MAG1             = 1,
 	EI_MAG2             = 2,
@@ -354,11 +341,16 @@ struct r_debug {
 	struct link_map *r_map;
 	Elf64_Addr r_brk;
 	enum { RT_CONSISTENT, RT_ADD, RT_DELETE } r_state;
-	Elf64_Addr r_ldbase;
+	Elf64_Addr r_dlbase;
 };
 
-struct r_debug _r_debug;
-struct r_debug *_dl_debug_addr = &_r_debug;
+struct r_debug _r_debug __attribute((visibility("default"))) = {
+	1,
+	0,
+	(Elf64_Addr)r_debug_brk,
+	RT_CONSISTENT,
+	0
+};
 
 //////////////////////////////
 // Shared Library Structure //
@@ -382,25 +374,12 @@ typedef struct _DsoNode {
 	struct _DsoNode *next;
 } DsoNode;
 
-typedef struct {
-	struct link_map *l_map;
-	struct link_map **l_map_deps;
-	usz base_len;
-	u32 name_hash, ref_count;
-
-	Elf64_Dyn  *dyn;
-	Elf64_Word *hash_table;
-	Elf64_Sym  *sym_table;
-	const char *str_table;
-} Dso2;
-
 global MArena   _gma_dl_load;
 global MArena   _gma_dl_temp;
 global MPool    _gmp_dl_dso;
 global MPool    _gmp_dl_dso_node;
 global MPool    _gmp_gdb_linkmap;
 global DsoNode *_gdso_tail;
-global struct link_map *l_map_tail;
 
 /////////////////
 // Main Dl API //
@@ -450,19 +429,14 @@ _dyn_setup_dso_structure(Dso *lib);
 local int
 _dl_open_file_using_env(const char *_filepath);
 
+
 ////////////////////
 // DL Definitions //
 ////////////////////
-
 local void
 dl_init(u8 *b,
         usz len)
 {
-	struct link_map *ldso;
-	Elf64_Ehdr *ehdr;
-	Elf64_Phdr *phdr;
-	usz   phnum;
-
 	assert(align_pad(b, KB(4)) == 0, "Memory should be aligned to 4KB!");
 	assert(align_pad(b, KB(4)) == 0, "Size should be aligned to 4KB!");
 	assert(len >= KB(64), "Minimum Size for dl_init not met!")
@@ -470,7 +444,15 @@ dl_init(u8 *b,
 	marena_init(&_gma_dl_load, b, len - KB(16), KB(4));
 	marena_init(&_gma_dl_temp, _gma_dl_load.end, KB(8), 8);
 
-	// Note: This will absolutely be re-done as this file gets re-done.
+	// Note: This is Mathed out at 64 Entries for DSOs, DSO Nodes and
+	//       Link Maps. If its a problem that DSO Nodes aren't enough
+	//       due to dependencies this will be updated accordingly.
+	//
+	//       Librarys in mind:
+	//           - X11 / Wayland
+	//           - OpenGL / Vulkan
+	//           - Alsa / Pulseaudio / Pipewire
+	//           - Input Libs for Gamepads (Xbox, PSX, Generic, etc.)
 	mpool_init(&_gmp_dl_dso, _gma_dl_temp.end, KB(4), sizeof(Dso), 8);
 	mpool_init(&_gmp_gdb_linkmap,
 	            _gmp_dl_dso.end,
@@ -483,33 +465,6 @@ dl_init(u8 *b,
 	            sizeof(DsoNode),
 	            8);
 	_gdso_tail = 0;
-
-	if (!auxv) {
-		auxv = environ;
-		while (*auxv++);
-	}
-
-	ehdr  = (Elf64_Ehdr *)GetAuxvValue(AT_BASE);
-	phdr  = (Elf64_Phdr *)((Elf64_Addr)ehdr + ehdr->e_phoff);
-	phnum = ehdr->e_phnum;
-	while (phnum-- && phdr->p_type != PT_DYNAMIC)
-		phdr++;
-
-	ldso = (struct link_map *)mpool_alloc(&_gmp_gdb_linkmap);
-	ldso->l_addr = (Elf64_Addr)(ehdr);
-	ldso->l_ld   = (Elf64_Dyn *)(ldso->l_addr + phdr->p_vaddr);
-	ldso->l_name = "template";
-	ldso->l_next = 0;
-	ldso->l_prev = 0;
-
-	_r_debug.r_version = 1;
-	_r_debug.r_map = ldso;
-	_r_debug.r_brk = (Elf64_Addr)cpu_mfence;
-	_r_debug.r_state = RT_CONSISTENT;
-	_r_debug.r_ldbase = ldso->l_addr;
-	cpu_mfence();
-
-	l_map_tail = ldso;
 }
 
 local void
@@ -551,9 +506,6 @@ dl_open(Dso *out, const char *filepath)
 	assert(_gma_dl_load.start && _gma_dl_temp.start && _gmp_dl_dso.start,
 	      "The Memory Arenas & Pool for dl are not initialized [dl_init]");
 
-	_r_debug.r_state = RT_ADD;
-	cpu_mfence();
-
 	memzerou(out, sizeof(Dso));
 	if (_dyn_hash_and_validate_existance(out, filepath))
 		return 0;
@@ -584,16 +536,20 @@ dl_open(Dso *out, const char *filepath)
 	map->l_addr = (Elf64_Addr)out->base;
 	map->l_name = (char*)filepath;
 	map->l_ld   = out->dyn;
-	map->l_prev = l_map_tail;
-	map->l_next = 0;
+	map->l_next = _r_debug.r_map;
+	map->l_prev = 0;
 
-	l_map_tail->l_next = map;
-	l_map_tail = map;
+	if (_r_debug.r_map)
+		_r_debug.r_map->l_prev = map;
+	_r_debug.r_map = map;
+
+	_r_debug.r_state = RT_ADD;
+	r_debug_brk();
 
 	_dyn_setup_relocations(out);
 
 	_r_debug.r_state = RT_CONSISTENT;
-	cpu_mfence();
+	r_debug_brk();
 
 	return 0;
 }

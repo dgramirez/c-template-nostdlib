@@ -48,16 +48,17 @@ pfn_os_write os_write = stub_os_write;
 // cstr //
 //////////
 local usz
-c_strlen(char *start)
+c_strlen(const char *start)
 {
-	char *end = start;
+	char *end = (char *const )start;
 	while (*end++);
 
 	return end - start;
 }
 
 local int
-c_streq(const char *s1, const char *s2)
+c_streq(const char *s1,
+        const char *s2)
 {
 	while(*s1 && *s2) {
 		if (*s1 != *s2)
@@ -66,8 +67,57 @@ c_streq(const char *s1, const char *s2)
 		s1++;
 		s2++;
 	}
-
 	return *s1 == *s2;
+}
+
+/////////////
+// s8 / b8 //
+/////////////
+local u8 *
+s8_chr(s8 s,
+       char c,
+       usz max)
+{
+	while(max--) {
+		if (*s.data == c)
+			return s.data;
+
+		s.data++;
+	}
+
+	return 0;
+}
+
+local u8 *
+s8_rchr(s8 s,
+        char c,
+        usz max)
+{
+	while(max--) {
+		if (*s.data == c)
+			return s.data;
+
+		s.data--;
+	}
+
+	return 0;
+}
+
+local int
+s8_eq(s8 l,
+      s8 r,
+      usz size)
+{
+	if (size == 0) {
+		if (l.len != r.len)
+			return 0;
+		return memequ(l.data, r.data, l.len);
+	}
+
+	if (l.len < size || r.len < size)
+		return 0;
+
+	return memequ(l.data, r.data, size);
 }
 
 ///////////////

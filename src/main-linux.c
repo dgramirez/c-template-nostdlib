@@ -11,11 +11,15 @@
 typedef int (*pfn_increment_ivar)();
 pfn_increment_ivar increment_ivar;
 
+typedef void (*pfn_open_window)();
+pfn_open_window open_window;
+
 int
 main(int argc,
      char **argv)
 {
-	Shlib lapp;
+	Dso lapp;
+	Dso lapp_x11;
 	s8  current_dir;
 	sb8 filepath;
 
@@ -43,14 +47,21 @@ main(int argc,
 	mb8_cpy(&filepath, current_dir);
 	mb8_cat(&filepath, s8("libapp.so\0"));
 
-	shlib_init(marena_alloc(&ma_master, MB(20), KB(4)), MB(20));
-	shlib_open(&lapp, filepath.b);
+	dl_init(marena_alloc(&ma_master, MB(20), KB(4)), MB(20));
+	dl_open(&lapp, (const char *)filepath.data);
 	marena_reset(&ma_temp);
 
-	increment_ivar = (pfn_increment_ivar)shlib_sym(&lapp, "increment_ivar");
+	increment_ivar = (pfn_increment_ivar)dl_sym(&lapp, "increment_ivar");
 	int x = increment_ivar();
 	x = increment_ivar();
 	x = increment_ivar();
+
+
+	filepath.len -= 4;
+	mb8_cat(&filepath, s8("_x11.so\0"));
+	dl_open(&lapp_x11, (const char *)filepath.data);
+	open_window = dl_sym(&lapp_x11, "open_window");
+	open_window();
 
 	sys_munmap(mem_master.data, mem_master.len);
 	return 0;

@@ -122,6 +122,12 @@
 #define CLONE_NEWTIME	0x00000080      /* New time namespace */
 #endif // USING_LIBC
 
+#define IS_SYSCALL_ERR(x) (((isz)(x) < 0) && ((isz)(x) > -4096))
+#define SYSCAL_ERR_VAL(x) (-(x))
+
+extern char **environ;
+static char **auxv = 0;
+
 extern ssize_t
 sys_read(int fd,
          void *buf,
@@ -180,6 +186,33 @@ sys_openat(int dirfd,
            const char *filename,
            int flags,
            mode_t mode);
+
+////////////////
+// GDB & Auxv //
+////////////////
+
+static void *
+GetAuxvValue(usz key) {
+	char **av;
+
+	av = auxv;
+	while (av[0]) {
+		if ((usz)av[0] == key)
+			return (void *)av[1];
+
+		av += 2;
+	}
+
+	return (void *)-1;
+}
+
+extern void
+cpu_mfence();
+
+static void __attribute__((noinline)) r_debug_brk(void) {
+	asm volatile("" ::: "memory");
+//	sys_write(0, "r_debug_brk hit\n", 16);
+}
 
 static void *
 mmap_anon(size_t size)
