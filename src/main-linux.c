@@ -5,7 +5,7 @@
 #include "mem/arena.h"
 #include "mem/pool.h"
 #include "cpu/thread-linux.h"
-#include "elf64.h"
+#include "elf/dl.h"
 #include "global.h"
 
 typedef int (*pfn_increment_ivar)();
@@ -18,8 +18,8 @@ int
 main(int argc,
      char **argv)
 {
-	Dso lapp;
-	Dso lapp_x11;
+	Solib lapp = {0};
+	Solib lapp_x11 = {0};
 	s8  current_dir;
 	sb8 filepath;
 
@@ -48,7 +48,7 @@ main(int argc,
 	mb8_cat(&filepath, s8("libapp.so\0"));
 
 	dl_init(marena_alloc(&ma_master, MB(20), KB(4)), MB(20));
-	dl_open(&lapp, (const char *)filepath.data);
+	dlopen(&lapp, (const char *)filepath.data);
 	marena_reset(&ma_temp);
 
 	increment_ivar = (pfn_increment_ivar)dl_sym(&lapp, "increment_ivar");
@@ -56,10 +56,9 @@ main(int argc,
 	x = increment_ivar();
 	x = increment_ivar();
 
-
 	filepath.len -= 4;
 	mb8_cat(&filepath, s8("_x11.so\0"));
-	dl_open(&lapp_x11, (const char *)filepath.data);
+	dlopen(&lapp_x11, (const char *)filepath.data);
 	open_window = dl_sym(&lapp_x11, "open_window");
 	open_window();
 

@@ -125,8 +125,149 @@
 #define IS_SYSCALL_ERR(x) (((isz)(x) < 0) && ((isz)(x) > -4096))
 #define SYSCAL_ERR_VAL(x) (-(x))
 
+///////////
+//  Auxv //
+///////////
 extern char **environ;
 static char **auxv = 0;
+
+typedef enum {
+	AT_NULL              =  0,
+	AT_IGNORE            =  1,
+	AT_EXECFD            =  2,
+	AT_PHDR              =  3,
+	AT_PHENT             =  4,
+	AT_PHNUM             =  5,
+	AT_PAGESZ            =  6,
+	AT_BASE              =  7,
+	AT_FLAGS             =  8,
+	AT_ENTRY             =  9,
+	AT_NOTELF            = 10,
+	AT_UID               = 11,
+	AT_EUID              = 12,
+	AT_GID               = 13,
+	AT_EGID              = 14,
+	AT_PLATFORM          = 15,
+	AT_HWCAP             = 16,
+	AT_CLKTCK            = 17,
+	AT_FPUCW             = 18,
+	AT_DCACHEBSIZE       = 19,
+	AT_ICACHEBSIZE       = 20,
+	AT_UCACHEBSIZE       = 21,
+	AT_IGNOREPPC         = 22,
+	AT_SECURE            = 23,
+	AT_BASE_PLATFORM     = 24,
+	AT_RANDOM            = 25,
+	AT_HWCAP2            = 26,
+	AT_RSEQ_FEATURE_SIZE = 27,
+	AT_RSEQ_ALIGN        = 28,
+	AT_PAD1              = 29,
+	AT_PAD2              = 30,
+	AT_EXECFN            = 31,
+	AT_SYSINFO           = 32,
+	AT_SYSINFO_EHDR      = 33,
+	AT_L1I_CACHESHAPE    = 34,
+	AT_L1D_CACHESHAPE    = 35,
+	AT_L2_CACHESHAPE     = 36,
+	AT_L3_CACHESHAPE     = 37,
+	AT_PAD3              = 38,
+	AT_PAD4              = 39,
+	AT_L1I_CACHESIZE     = 40,
+	AT_L1I_CACHEGEOMETRY = 41,
+	AT_L1D_CACHESIZE     = 42,
+	AT_L1D_CACHEGEOMETRY = 43,
+	AT_L2_CACHESIZE      = 44,
+	AT_L2_CACHEGEOMETRY  = 45,
+	AT_L3_CACHESIZE      = 46,
+	AT_L3_CACHEGEOMETRY  = 47,
+
+	AT_LAST,
+} AuxvLocations;
+
+typedef union {
+	void *value[AT_LAST];
+	struct {
+		char *at_null;
+		void *at_ignore;
+		usz   at_execfd;
+		char *at_phdr;
+		usz   at_phent;
+		usz   at_phnum;
+		usz   at_pagesz;
+		char *at_base;
+		usz   at_flags;
+		char *at_entry;
+		usz   at_notelf;
+		usz   at_uid;
+		usz   at_euid;
+		usz   at_gid;
+		usz   at_egid;
+		char *at_platform;
+		usz   at_hwcap;
+		usz   at_clktck;
+		usz   at_fpucw;
+		usz   at_dcachebsize;
+		usz   at_icachebsize;
+		usz   at_ucachebsize;
+		usz   at_ignoreppc;
+		usz   at_secure;
+		char *at_base_platform;
+		char *at_random;
+		usz   at_hwcap2;
+		usz   at_rseq_feature_size;
+		usz   at_rseq_align;
+		void *at_pad1;
+		void *at_pad2;
+		char *at_execfn;
+		char *at_sysinfo;
+		char *at_sysinfo_ehdr;
+		usz   at_l1i_cacheshape;
+		usz   at_l1d_cacheshape;
+		usz   at_l2_cacheshape;
+		usz   at_l3_cacheshape;
+		void *at_pad3;
+		void *at_pad4;
+		usz   at_l1i_cachesize;
+		usz   at_l1i_cachegeometry;
+		usz   at_l1d_cachesize;
+		usz   at_l1d_cachegeometry;
+		usz   at_l2_cachesize;
+		usz   at_l2_cachegeometry;
+		usz   at_l3_cachesize;
+		usz   at_l3_cachegeometry;
+	};
+} AuxV;
+static AuxV _g_auxv;
+
+static void
+FillGlobalAuxV()
+{
+	char **av;
+	for (int i = 0; i < AT_LAST; ++i)
+		_g_auxv.value[i] = 0;
+
+	av = auxv;
+	while (av[0]) {
+		_g_auxv.value[(usz)av[0]] = av[1];
+		av += 2;
+	}
+}
+
+static void *
+GetAuxvValue(usz key)
+{
+	char **av;
+
+	av = auxv;
+	while (av[0]) {
+		if ((usz)av[0] == key)
+			return (void *)av[1];
+
+		av += 2;
+	}
+
+	return (void *)-1;
+}
 
 extern ssize_t
 sys_read(int fd,
@@ -187,32 +328,8 @@ sys_openat(int dirfd,
            int flags,
            mode_t mode);
 
-////////////////
-// GDB & Auxv //
-////////////////
-
-static void *
-GetAuxvValue(usz key) {
-	char **av;
-
-	av = auxv;
-	while (av[0]) {
-		if ((usz)av[0] == key)
-			return (void *)av[1];
-
-		av += 2;
-	}
-
-	return (void *)-1;
-}
-
 extern void
 cpu_mfence();
-
-static void __attribute__((noinline)) r_debug_brk(void) {
-	asm volatile("" ::: "memory");
-//	sys_write(0, "r_debug_brk hit\n", 16);
-}
 
 static void *
 mmap_anon(size_t size)
