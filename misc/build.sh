@@ -16,11 +16,23 @@ fi
 
 cd "${SRC}"
 fasm entry-x86_64.fasm -d PLATFORM=LINUX
-cc main-linux.c entry-x86_64.o -nostdlib \
+$CC main-linux.c entry-x86_64.o -nostdlib \
 	-Wall -Wno-unused-function -O0    -g \
 	-D_DEBUG \
 	-I "${INC}" \
 	-o "${OUT}/template"
+
+# FOR DL BRANCH - Keeping this to remember flags / options
+#$CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
+#	-Wall -Wno-unused-function -O0    -g \
+#	-I "${INC}" \
+#	-o "${OUT}/libapp.so"
+#
+#$CC libapp_x11.c -shared -fPIC -nostdlib -gdwarf-4 -fno-builtin \
+#	-Wall -Wno-unused-function -O0    -g \
+#	-lX11 \
+#	-I "${INC}" \
+#	-o "${OUT}/libapp_x11.so"
 
 rm -rf *.o
 

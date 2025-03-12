@@ -107,7 +107,7 @@ marena_reset(MArena *arena)
 
 local void
 marena_save(MArenaTemp *out,
-              MArena *arena)
+            MArena *arena)
 {
 	out->arena    = arena;
 	out->current  = arena->current;
