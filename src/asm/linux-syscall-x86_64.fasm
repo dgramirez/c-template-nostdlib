@@ -120,3 +120,11 @@ sys_openat:
 
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GDB - This is here until there is a better place ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+public cpu_mfence
+cpu_mfence:
+	mfence
+	ret
+

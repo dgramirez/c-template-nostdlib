@@ -328,6 +328,9 @@ sys_openat(int dirfd,
            int flags,
            mode_t mode);
 
+extern void
+cpu_mfence();
+
 static void *
 mmap_anon(size_t size)
 {
