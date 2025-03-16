@@ -385,7 +385,7 @@ global DsoNode *_gdso_tail;
 // Main Dl API //
 /////////////////
 local void
-dl_init(u8 *b,
+dlinit(u8 *b,
         usz len);
 
 local int
@@ -393,8 +393,8 @@ dl_open(Dso *out,
         const char *filepath);
 
 local void *
-dl_sym(Dso *lib,
-       const char *name);
+dlsym(Dso *lib,
+      const char *name);
 
 local void
 dl_close(Dso *lib);
@@ -434,12 +434,12 @@ _dl_open_file_using_env(const char *_filepath);
 // DL Definitions //
 ////////////////////
 local void
-dl_init(u8 *b,
+dlinit(u8 *b,
         usz len)
 {
 	assert(align_pad(b, KB(4)) == 0, "Memory should be aligned to 4KB!");
 	assert(align_pad(b, KB(4)) == 0, "Size should be aligned to 4KB!");
-	assert(len >= KB(64), "Minimum Size for dl_init not met!")
+	assert(len >= KB(64), "Minimum Size for dlinit not met!")
 
 	marena_init(&_gma_dl_load, b, len - KB(16), KB(4));
 	marena_init(&_gma_dl_temp, _gma_dl_load.end, KB(8), 8);
@@ -475,8 +475,8 @@ dl_close(Dso *lib)
 }
 
 local void *
-dl_sym(Dso *lib,
-       const char *name)
+dlsym(Dso *lib,
+      const char *name)
 {
 	uint32_t  hash      =  elf64_hash((const unsigned char *)name);
 	uint32_t  nbucket   =  lib->hash_table[0];
@@ -504,7 +504,7 @@ dl_open(Dso *out, const char *filepath)
 	int         err;
 
 	assert(_gma_dl_load.start && _gma_dl_temp.start && _gmp_dl_dso.start,
-	      "The Memory Arenas & Pool for dl are not initialized [dl_init]");
+	      "The Memory Arenas & Pool for dl are not initialized [dlinit]");
 
 	memzerou(out, sizeof(Dso));
 	if (_dyn_hash_and_validate_existance(out, filepath))
@@ -797,7 +797,7 @@ _dyn_setup_relocations(Dso *lib)
 
 		sym      = &lib->sym_table[sym_idx];
 		sym_name = lib->str_table + sym->st_name;
-		sym_addr = (Elf64_Addr)dl_sym(lib, sym_name);
+		sym_addr = (Elf64_Addr)dlsym(lib, sym_name);
 
 		switch(rtype) {
 			case R_X86_64_JUMP_SLOT: {

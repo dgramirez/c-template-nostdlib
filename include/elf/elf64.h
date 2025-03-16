@@ -2,7 +2,6 @@
 #define INCLUDE_ELF64_H
 
 #include "platform.h"
-#include "global.h"
 #include "asm/linux-syscall.h"
 
 // I finally found a good Elf64 Documentation:

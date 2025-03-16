@@ -58,7 +58,6 @@ typedef union {
 } MemUnion;
 
 #ifdef USING_LIBC
-	#define USING_LIBC
 	#include <linux/futex.h>
 	#include <linux/sched.h>
 	#include <sys/mman.h>

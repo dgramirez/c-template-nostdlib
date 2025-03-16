@@ -7,7 +7,7 @@
 // Main Dl API //
 /////////////////
 local void
-dl_init(u8 *b,
+dlinit(u8 *b,
         usz len);
 
 local int
@@ -15,8 +15,8 @@ dlopen(Solib *out,
        const char *filepath);
 
 local void *
-dl_sym(Solib *solib,
-       const char *name);
+dlsym(Solib *solib,
+      const char *name);
 
 local void
 dlclose(Solib *lib);
@@ -25,8 +25,8 @@ dlclose(Solib *lib);
 // DL Definitions //
 ////////////////////
 local void
-dl_init(u8 *b,
-        usz len)
+dlinit(u8 *b,
+       usz len)
 {
 	Dso *ldso;
 	Elf64_Ehdr *ehdr;
@@ -35,7 +35,7 @@ dl_init(u8 *b,
 
 	assert(align_pad(b, KB(4)) == 0, "Memory should be aligned to 4KB!");
 	assert(align_pad(b, KB(4)) == 0, "Size should be aligned to 4KB!");
-	assert(len >= KB(128), "Minimum Size for dl_init not met!")
+	assert(len >= KB(128), "Minimum Size for dlinit not met!")
 
 	marena_init(&_gma_dso_load, b, len - KB(32), KB(4));
 	marena_init(&_gma_tls_data, _gma_dso_load.end, KB(16), KB(4));
@@ -85,8 +85,8 @@ dlclose(Solib *lib)
 }
 
 local void *
-dl_sym(Solib *solib,
-       const char *name)
+dlsym(Solib *solib,
+      const char *name)
 {
 	Dso *lib = solib->dso;
 	uint32_t  hash      =  elf64_hash((const unsigned char *)name);
@@ -119,7 +119,7 @@ dlopen(Solib *out,
 	int         err;
 	u32         hash;
 
-	assert(_gdso_tail, "Please initialize dl using dl_init function!");
+	assert(_gdso_tail, "Please initialize dl using dlinit function!");
 
 	hash = _dyn_hash_and_validate_existance(filepath);
 	if (hash == 0xBADDF00D) //NOTE: Magic inside hash & validate function!

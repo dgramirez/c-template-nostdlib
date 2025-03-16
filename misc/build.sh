@@ -18,7 +18,7 @@ cd "${SRC}"
 fasm entry-x86_64.fasm -d PLATFORM=LINUX
 $CC main-linux.c entry-x86_64.o -nostdlib \
 	-Wall -Wno-unused-function -O0    -g \
-	-D_DEBUG \
+	-D_DEBUG -DUSING_LIBC -lc \
 	-I "${INC}" \
 	-o "${OUT}/template"
 

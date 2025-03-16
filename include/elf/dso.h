@@ -60,8 +60,8 @@ dlopen(Solib *out,
        const char *filepath);
 
 local void *
-dl_sym(Solib *solib,
-       const char *name);
+dlsym(Solib *solib,
+      const char *name);
 
 //////////////////////
 // Helper Functions //
@@ -474,7 +474,7 @@ _dyn_setup_relocations(Dso *lib)
 
 		sym      = &lib->sym_table[sym_idx];
 		sym_name = lib->str_table + sym->st_name;
-		sym_addr = (Elf64_Addr)dl_sym(&solib, sym_name);
+		sym_addr = (Elf64_Addr)dlsym(&solib, sym_name);
 
 		switch(rtype) {
 			case R_X86_64_JUMP_SLOT: {

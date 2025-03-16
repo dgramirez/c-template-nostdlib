@@ -61,5 +61,8 @@
 #define deffn_wgl(name) \
 	name = (PFN_##name)wglGetProcAddress(#name)
 
+#define deffn_dlsym(solib, name) \
+	name = (PFN_##name)dlsym(solib, #name)
+
 #endif // INCLUDE_DEFINE_H
 
