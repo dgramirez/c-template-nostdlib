@@ -30,4 +30,11 @@ match =LINUX, PLATFORM {
 	; --- GNU  Section ---
 	section '.note.GNU-stack'
 }
-
+match =WIN64, PLATFORM {
+	format MS64 COFF
+	include "asm/cpuid-x86_64.fasm"
+}
+match =WIN32, PLATFORM {
+	format MS COFF
+	include "asm/cpuid-x86_64.fasm"
+}

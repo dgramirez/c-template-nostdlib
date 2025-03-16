@@ -12,7 +12,9 @@
 //                      appropriate on a project basis (Jobs via Threading)
 
 local inline usz
-rotr(usz x, int k) {
+rotr(usz x,
+     int k)
+{
 	// NOTE [32-Bit]: Bad for 32-bit support
 	return (x >> k) | (x << (64 - k));
 }
@@ -566,7 +568,7 @@ memsetu_usz(void *dst,
 	size -= pad;
 
 	while (pad--) {
-		d.pu8[pad] = val;
+		d.pu8[pad] = (u8)val;
 		val = rotr(val, 8);
 	}
 

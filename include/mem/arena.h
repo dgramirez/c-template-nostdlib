@@ -39,7 +39,7 @@ marena_init(MArena *out,
 local void *
 marena_alloc(MArena *arena,
              usz len,
-			 usz align)
+             usz align)
 {
 	usz pad;
 
@@ -61,7 +61,7 @@ local void *
 marena_realloc(MArena *arena,
                void *oldbuf,
                usz len,
-			   usz align)
+               usz align)
 {
 	usz oldlen;
 	usz pad;

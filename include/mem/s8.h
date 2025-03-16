@@ -78,10 +78,10 @@ s8_chr(s8 s,
        char c,
        usz max)
 {
+	max = imin(s.len, max);
 	while(max--) {
 		if (*s.data == c)
 			return s.data;
-
 		s.data++;
 	}
 
@@ -93,10 +93,10 @@ s8_rchr(s8 s,
         char c,
         usz max)
 {
+	max = imin(s.len, max);
 	while(max--) {
 		if (*s.data == c)
 			return s.data;
-
 		s.data--;
 	}
 
@@ -184,7 +184,7 @@ mb8_cmp(mb8 *l,
         mb8 *r)
 {
 	usz max_len;
-	usz rval;
+	int rval;
 
 	max_len = imin(l->len, r->len);
 	rval = memcmpu(l->data, r->data, max_len);
@@ -313,7 +313,7 @@ mb8_sprint_hex(mb8 *mb,
 
 local void
 mb8_sprint_hex_cap(mb8 *mb,
-                    usz x)
+                   usz x)
 {
 	sticky const u8 hex_table[] = {
 		'0', '1', '2', '3',

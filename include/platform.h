@@ -30,12 +30,16 @@
 		# define __mode_t_defined
 		#endif
 	#endif
+
+	#ifdef _WIN32
+		typedef ptrdiff_t ssize_t;
+	#endif
 #endif
 
 typedef int8_t  i8;
 typedef int16_t i16;
-typedef ssize_t isz;
 typedef int32_t i32;
+typedef ssize_t isz;
 
 typedef uint8_t  u8;
 typedef uint16_t u16;

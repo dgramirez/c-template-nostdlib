@@ -194,7 +194,9 @@ main(int argc,
 	return 0;
 }
 
-void *memset(void *s, int c, size_t n)
+void *memset(void *s,
+             int c,
+             size_t n)
 {
 	// NOTE [32-Bit]: Bad for 32-bit support
 	usz csz;

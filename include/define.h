@@ -53,5 +53,13 @@
 	#define assert(x, s) ;
 #endif
 
+#define declfn(rtype, name, rcode, ...) \
+	typedef rtype (*PFN_##name)(__VA_ARGS__); \
+	rtype stub_##name(__VA_ARGS__) {rcode} \
+	PFN_##name name = stub_##name
+
+#define deffn_wgl(name) \
+	name = (PFN_##name)wglGetProcAddress(#name)
+
 #endif // INCLUDE_DEFINE_H
 
