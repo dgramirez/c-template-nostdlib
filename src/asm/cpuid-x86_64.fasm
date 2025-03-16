@@ -1,5 +1,5 @@
-public cpuid_native
 match =WIN64, PLATFORM {
+	public cpuid_native
 	cpuid_native:
 		use64
 
@@ -27,7 +27,39 @@ match =WIN64, PLATFORM {
 		ret
 }
 
+match =WIN32, PLATFORM {
+	public _cpuid_native
+	_cpuid_native:
+		use32
+		push ebx
+		push esi
+
+		mov esi, [esp+(1+2)*4]
+		mov eax, [esi]
+		mov esi, [esp+(3+2)*4]
+		mov ecx, [esi]
+		xor ebx, ebx
+		xor edx, edx
+
+		cpuid
+
+		mov [esi], ecx
+
+		mov esi, [esp+(1+2)*4]
+		mov [esi], eax
+		mov esi, [esp+(2+2)*4]
+		mov [esi], ebx
+		mov esi, [esp+(4+2)*4]
+		mov [esi], edx
+
+		pop ebx
+		pop esi
+
+		ret
+}
+
 match =LINUX, PLATFORM {
+	public cpuid_native
 	cpuid_native:
 		use64
 

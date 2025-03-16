@@ -7,7 +7,7 @@
 #endif
 	
 #ifdef _MSC_VER
-	int _fltused = 0;
+	int _fltused;
 #endif
 
 local void
@@ -141,7 +141,11 @@ Win32ParseCmdLine(int    *argc,
 	#pragma function(memset)
 	void *memset(void *dst, int c, size_t count)
 	{
-		usz _c = (usz)c | ((usz)c << 32);
+		#if EXE_ARCH == 32
+			usz _c = (usz)c;
+		#else
+			usz _c = (usz)c | ((usz)c << 32);
+		#endif
 		memsetu(dst, _c, count);
 		return dst;
 	}
@@ -152,5 +156,26 @@ Win32ParseCmdLine(int    *argc,
 		memcpyu(dst, (void*)src, count);
 		return dst;
 	}
+
+	#if EXE_ARCH == 32
+		__declspec(naked) void _ftol2()
+		{
+			__asm {
+				fistp qword ptr [esp-8]
+				mov edx, [esp-4]
+				mov eax, [esp-8]
+				ret
+			}
+		}
+
+		__declspec(naked) void _ftol2_sse()
+		{
+			__asm {
+				fistp dword ptr [esp-4]
+				mov eax, [esp-4]
+				ret
+			}
+		}
+	#endif
 #endif 
 

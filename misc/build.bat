@@ -1,9 +1,6 @@
 @ECHO OFF
 SETLOCAL
 
-:::::::::::::::::::::::::::
-:: Variable Declarations ::
-:::::::::::::::::::::::::::
 SET bin_name=template
 
 SET root=
@@ -24,13 +21,14 @@ SET link_flags=
 SET link_dbg=
 SET link_rel=
 SET link_drl=
+SET clean=
 SET xp=
+SET xp_arch=
+SET xp_subsysver=
+SET fasm_arch=
+SET cc_name=
 
 SET args_errored=
-
-::::::::::::::::::::
-:: Argument Setup ::
-::::::::::::::::::::
 CALL :fill_args %1
 IF ["%args_errored%"] == ["1"] ( GOTO :EOF )
 
@@ -58,64 +56,67 @@ IF ["%args_errored%"] == ["1"] ( GOTO :EOF )
 CALL :fill_args %9
 IF ["%args_errored%"] == ["1"] ( GOTO :EOF )
 
-:::::::::::::::::::
-:: Project Setup ::
-:::::::::::::::::::
-IF NOT DEFINED compiler ( CALL :detect_compiler )
-IF NOT DEFINED compiler ( GOTO :no_compiler_found )
-
-IF NOT DEFINED build (
-	:: Use Debug
-	SET build=1
-)
-
+:: Project Setup
 FOR %%i IN ( %~DP0.. ) DO SET "root=%%~fi"
 SET inc=%root%\include
 SET src=%root%\src
 SET out=%root%\out
-:::::::::::::::::::::::::
-:: Configuration Setup ::
-:::::::::::::::::::::::::
-set cc_objs=entry-x86_64-win32.c entry-x86_64.obj
-IF ["%compiler%"] == ["cl"] (
-	SET out_dbg=%out%\msvc\debug
-	SET out_rel=%out%\msvc\release
-	SET out_drl=%out%\msvc\debug-release
 
-	CALL :config_msvc
-) ELSE (
-	SET out_dbg=%out%\zig\debug
-	SET out_rel=%out%\zig\release
-	SET out_drl=%out%\zig\debug-release
+IF ["%clean%"] == ["1"] (
+	RMDIR /S /Q "%out%"
+	PUSHD "%src%"
+		del /S /Q /F *.obj *.o *.pdb >nul 2>nul
+	POPD
 
-	CALL :config_zig
+	echo Cleaned Project!
+	GOTO :EOF
 )
 
-::::::::::::::
-:: Compile! ::
-::::::::::::::
+:: TODO - Figure this shit out.
+::        I need to set cc_name as soon as either where zig
+::        or setup_cl.bat is ran.
+SET fasm_arch=WIN64
+IF ["%compiler%"] == ["cl"]     ( CALL :detect_msvc )
+IF ["%compiler%"] == ["zig cc"] ( CALL :detect_zig )
+IF NOT DEFINED compiler ( CALL :detect_compiler )
+IF NOT DEFINED compiler ( GOTO :no_compiler_found )
+
+IF NOT DEFINED build ( SET build=1 )
+
+SET out_dbg=%out%\%cc_name%\debug
+SET out_rel=%out%\%cc_name%\release
+SET out_drl=%out%\%cc_name%\debug-release
+
+:: Configuration Setup
+set cc_objs=entry-x86_64-win32.c entry-x86_64.obj
+IF ["%compiler%"] == ["cl"]     ( CALL :config_msvc )
+IF ["%compiler%"] == ["zig cc"] ( CALL :config_zig )
+
+:: Compile
 PUSHD "%SRC%"
 	SET ERRORLEVEL=0
 
-	fasm -d PLATFORM=WIN64 entry-x86_64.fasm
-	IF ["%ERRORLEVEL%"] == ["1"] ( echo "FAILED" && goto :eof )
+	fasm -d PLATFORM=%fasm_arch% entry-x86_64.fasm
+	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&1)" 2>nul && (
 		IF NOT EXIST "%out_dbg%" ( mkdir %out_dbg% )
 		%compiler% %cc_flags% %cc_dbg% %cc_objs% %link_flags% %link_dbg%
 	)
-	IF ["%ERRORLEVEL%"] == ["1"] ( echo "FAILED" && goto :eof )
+	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&2)" 2>nul && (
 		IF NOT EXIST "%out_rel%" ( mkdir %out_rel% )
 		%compiler% %cc_flags% %cc_rel% %cc_objs% %link_flags% %link_rel%
 	)
-	IF ["%ERRORLEVEL%"] == ["1"] ( echo "FAILED" && goto :eof )
+	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&4)" 2>nul && (
 		IF NOT EXIST "%out_drl%" ( mkdir %out_drl% )
 		%compiler% %cc_flags% %cc_drl% %cc_objs% %link_flags% %link_drl%
 	)
+
+	del /S /Q /F *.obj *.o *.pdb >nul 2>nul
 POPD
 
 ENDLOCAL
@@ -124,28 +125,13 @@ GOTO :EOF
 :fill_args
 	SET made_changes=
 
-	:::::::::::
-	:: Empty ::
-	:::::::::::
-	IF ["%1"] == [""] ( GOTO :EOF )
-
-	::::::::::::::
-	:: Compiler ::
-	::::::::::::::
-	IF ["%1"] == ["zig"] (
-		SET compiler=zig cc
-		GOTO :EOF
-	)
-	IF ["%1"] == ["msvc"] (
-		SET compiler=cl
-		GOTO :EOF
-	)
-
-	:::::::::::
-	:: Build ::
-	:::::::::::
-	:fill_args_build
-	IF ["%1"] == ["a"] ( SET build=7 && GOTO :EOF )
+	IF ["%1"] == [""]     ( GOTO :EOF )
+	IF ["%1"] == ["c"]    ( SET clean=1&&GOTO :EOF )
+	IF ["%1"] == ["zig"]  ( SET "compiler=zig cc"&&GOTO :EOF )
+	IF ["%1"] == ["msvc"] ( SET compiler=cl&&GOTO :EOF )
+	IF ["%1"] == ["xp"]   ( SET xp=1&&GOTO :EOF )
+	IF ["%1"] == ["xp64"] ( SET xp=2&&GOTO :EOF )
+	IF ["%1"] == ["a"]    ( SET build=7&&GOTO :EOF )
 
 	ECHO.%1 | FIND /I "d">nul && (
 		IF NOT DEFINED build (
@@ -191,7 +177,6 @@ GOTO :EOF
 	
 	IF DEFINED made_changes ( GOTO :EOF )
 
-	:fill_args_end
 	ECHO Error with %1
 	ECHO    - Unknown Argument
 	ECHO    - Attempted to re-write COMPILER (Can only set once)
@@ -216,14 +201,47 @@ GOTO :EOF
 GOTO :EOF
 
 :detect_compiler
-	IF DEFINED LIB ( SET compiler=cl&&GOTO :EOF )
-	CALL "%~dp0\setup_cl.bat" x64
-	IF DEFINED LIB ( SET compiler=cl&&GOTO :EOF )
+	IF DEFINED compiler goto :EOF
 
-	WHERE zig >nul 2>nul
-	IF ["%ERRORLEVEL%"] == ["0"] ( SET compiler=zig cc )
+	CALL :detect_msvc
+	IF DEFINED compiler GOTO :EOF
+
+	CALL :detect_zig
 GOTO :EOF
-	
+
+:detect_msvc
+	IF DEFINED LIB ( GOTO :EOF )
+
+	IF ["%xp%"] == ["1"] ( call :config_xp32 )
+	IF ["%xp%"] == ["2"] ( call :config_xp64 )
+	IF DEFINED xp (
+		CALL "%~dp0\setup_cl.bat" %xp_arch% -vcvars_ver=14.16
+		IF NOT DEFINED LIB ( GOTO :EOF )
+
+		SET compiler=cl
+		GOTO :EOF
+	)
+
+	IF DEFINED LIB (
+		SET compiler=cl
+		SET cc_name=msvc
+		GOTO :EOF
+	)
+	CALL "%~dp0\setup_cl.bat" x64
+	IF DEFINED LIB (
+		SET compiler=cl
+		SET cc_name=msvc
+		GOTO :EOF
+	)
+GOTO :EOF
+
+:detect_zig
+	WHERE zig >nul 2>nul
+	IF ["%ERRORLEVEL%"] == ["0"] ( SET "compiler=zig cc" )
+
+	SET cc_name=zig
+GOTO :EOF
+
 :no_compiler_found
 	ECHO Unable to detect a compiler! Please install one of the following
 	ECHO compilers:
@@ -237,16 +255,16 @@ GOTO :EOF
 	ECHO.
 	ECHO    Zig Compiler
 	ECHO    Version 0.13.0 ONLY! Unfortunately, 0.14.0 is a complete disaster
-	ECHO    for this project, as 
-	ECHO    
+	ECHO    for this project. Will wait for 0.14.1 or 0.15.0
+	ECHO.
 GOTO :EOF
 
 :config_msvc
 	SET cc_objs=%cc_objs% Kernel32.lib User32.lib Gdi32.lib Opengl32.lib
 	SET cc_flags= /EHa- /fp:except- /fp:fast /GL- /Gm- /GR- /GS- /W4 /WX ^
-	/Gs2147483647 /nologo /wd4201 /I"%inc%"
+	/Gs2147483647 /nologo /wd4201 /I"%inc%" %cc_flags%
 	SET link_flags=/link /WX /STACK:0x200000,0x200000 /INCREMENTAL:NO ^
-	/NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:CONSOLE
+	/NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:CONSOLE%xp_subsysver%
 
 	SET cc_dbg=/Zi /Od /D "_DEBUG"
 	SET cc_rel=/O2 /D "NDEBUG"
@@ -268,12 +286,42 @@ GOTO :EOF
 	-fno-asynchronous-unwind-tables -fno-rtti -fno-builtin -fno-exceptions ^
 	-fno-signed-zeros -ffinite-math-only -ffast-math ^
 	-I %inc% -isystem %TEMP% -mno-stack-arg-probe -z stack-size=0x200000 ^
-	-e "_start" /SUBSYSTEM:WINDOWS /NODEFAULTLIB -fno-sanitize=all
+	-e "_start" /SUBSYSTEM:WINDOWS /NODEFAULTLIB -fno-sanitize=all ^
+	%cc_flags%
 
 	SET cc_dbg=-O0 -g -fdebug-macro -fno-standalone-debug /DEBUG:FULL ^
 	-o "%out_dbg%\%bin_name%.exe"
-	SET cc_rel=-O2 -fno-debug-macro /DEBUG:NONE /RELEASE ^
+	SET cc_rel=-O2 -fno-debug-macro /DEBUG:NONE ^
 	-o "%out_rel%\%bin_name%.exe"
 	SET cc_drl=-O2 -g -fdebug-macro -fno-standalone-debug /DEBUG:FULL ^
 	/RELEASE -o "%out_drl%\%bin_name%.exe"
 GOTO :EOF
+
+:config_xp32
+	SET xp_arch=x86
+	SET fasm_arch=WIN32
+	SET xp_subsysver=,5.01
+	SET cc_name=xp32
+	SET PATH=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin;%PATH%
+	SET INCLUDE=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include;%INCLUDE%
+	SET LIB=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib;%LIB%
+	SET LIBPATH=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib;%LIBPATH%
+
+	SET cc_flags= /D"WINVER=0x0501" /D"_WIN32_WINNT=0x0501" ^
+	/D"NTDDI_VERSION=0x05010300" /arch:IA32
+GOTO :EOF
+
+:config_xp64
+	SET xp_arch=x64
+	SET fasm_arch=WIN64
+	SET xp_subsysver=,5.02
+	SET cc_name=xp64
+	SET PATH=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin\x64;%PATH%
+	SET INCLUDE=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include;%INCLUDE%
+	SET LIB=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\x64;%LIB%
+	SET LIBPATH=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\x64;%LIBPATH%
+
+	SET cc_flags=/D"WINVER=0x0502" /D"_WIN32_WINNT=0x0502" ^
+	/D"NTDDI_VERSION=0x05020200"
+GOTO :EOF
+

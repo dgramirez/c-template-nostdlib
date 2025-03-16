@@ -38,5 +38,3 @@ $CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
 
 rm -rf *.o
 
-echo $ROOT
-

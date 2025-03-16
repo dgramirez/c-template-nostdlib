@@ -11,13 +11,21 @@
 //                      Features like SSE, AVX, etc.) or when it seems
 //                      appropriate on a project basis (Jobs via Threading)
 
+#if EXE_ARCH == 32
 local inline usz
 rotr(usz x,
      int k)
 {
-	// NOTE [32-Bit]: Bad for 32-bit support
+	return (x >> k) | (x << (32 - k));
+}
+#else
+local inline usz
+rotr(usz x,
+     int k)
+{
 	return (x >> k) | (x << (64 - k));
 }
+#endif
 
 ////////////
 // MEMCPY //

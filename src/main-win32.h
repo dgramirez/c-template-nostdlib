@@ -9,6 +9,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#if EXE_ARCH == 32
+	#define WIN32_USZ_VALUE 1234567890
+	#define WIN32_ISZ_VALUE -1876543290
+#else
+	#define WIN32_USZ_VALUE 12345678901234567
+	#define WIN32_ISZ_VALUE -9876543210987654
+#endif
+
 /////////////
 // Helpers //
 /////////////

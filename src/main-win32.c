@@ -24,14 +24,14 @@ Win32Main(int argc, s8 *argv)
 	fb8_flush(&hw2);
 
 	hs = s8("Positive size_t Value: ");
-	usz uval = 12345678901234567;
+	usz uval = WIN32_USZ_VALUE;
 	fb8_append(&hw2, hs);
 	fb8_append_usz(&hw2, uval);
 	fb8_append_lf(&hw2);
 	fb8_flush(&hw2);
 
 	hs = s8("Negative size_t Value: ");
-	isz ival = -9876543210987654;
+	isz ival = WIN32_ISZ_VALUE;
 	fb8_append(&hw2, hs);
 	fb8_append_isz(&hw2, ival);
 	fb8_append_lf(&hw2);
