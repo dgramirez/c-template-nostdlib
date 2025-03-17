@@ -53,18 +53,20 @@ are not supported for the platform layer, as it uses volatile and atomics. Here 
 to compile for Linux:
   1. fasm -d PLATFORM=LINUX src/entry-x86_64.fasm
   2. cc main-linux.c entry-x86_64.o
-  3. cc ... -nostdlib # -lc for platform layer, hoping to change this eventually, though musl is an option
+  3. cc ... -i <include>
+  5. cc ... -nostdlib # -lc for platform layer, hoping to change this eventually, though musl is an option
 
 For Windows (Non-XP):
   1. fasm -d PLATFORM=WIN64 src/entry-x86_64.fasm
   2. %CC% entry-x86_64-win32.c entry-x86_64.obj
-  3. /link /NODEFAULTLIB
+  3. /I <Include Dir>
+  4. /link /NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:<subsystem>
 
 Windows XP is a bit complicated, as you have to set it up yourself (unlike in Visual Studio IDE, where
 xml files already do the job for you.) The important things are as follows:
   1. The Environment Variables are set to use Windows 7 SDK with XP Support  
     - Read :config_xp32 and :config_xp64 inside build.bat  
-  2. When running vcvars batch file, make sure it uses the Win7 SDK w/ XP support version
+  2. When running vcvars batch file, make sure it uses the Win7 SDK w/ XP support version  
     - vcvars_ver=14.16  
     - Read :detect_msvc inside build.bat  
   3. /SUBSYSTEM must exist with a value, and **must** append the correct subsystem version  
@@ -77,8 +79,18 @@ xml files already do the job for you.) The important things are as follows:
   5. For Windows XP SP3 x86, you are going to want two additional things  
     - For FASM's Platform, replace WIN64 with WIN32  
     - Include /arch:IA32 as a **compiler** flag (Make sure its before /link)  
-    - Read :config_xp32 and :config_xp64 inside build.bat for these two.  
-    
+    - Read :config_xp32 and :config_xp64 inside build.bat for these two.
+
+Finally, For Windows XP \(64-bit, Remember Step 5 From Above for x86\)
+  1. fasm -d PLATFORM=WIN64
+  2. %CC% entry-x86_64-win32.c entry-x86_64.obj
+  3. /link /NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:<subsystem>
+
+Compiling with Zig CC is another complex one. Unlike Window's /NODEFAULTLIB, using -nostdlib will have you
+lose <windows.h> include path. Why? I have NO IDEA. Read :config_zig inside build.bat to see how I solved
+that issue. From there, its very similar to the Linux/Clang flags, adding the /subsystem:<subsystem> from
+lld-link. I don't know if you can do Windows XP support here, so I simply don't support it with zig cc.  
+
 ### Implemented
 Linux Syscalls:
   - sys_write
