@@ -29,5 +29,34 @@ typedef struct {
 	i32 run_app;
 } PlatformData;
 
+#ifdef _MSC_VER
+	int _fltused;
+
+	#if EXE_ARCH == 32
+		__declspec(naked) void _ftol2()
+		{
+			__asm {
+				fistp qword ptr [esp-8]
+				mov edx, [esp-4]
+				mov eax, [esp-8]
+				ret
+			}
+		}
+
+		__declspec(naked) void _ftol2_sse()
+		{
+			__asm {
+				fistp dword ptr [esp-4]
+				mov eax, [esp-4]
+				ret
+			}
+		}
+	#endif
+#endif
+
+#ifdef _ZIG
+	int _tls_index = 0;
+#endif
+
 #endif // INCLUDE_PLATFORM_APP_RELATIONSHIP_H
 

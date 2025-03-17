@@ -52,8 +52,8 @@ match =WIN32, PLATFORM {
 		mov esi, [esp+(4+2)*4]
 		mov [esi], edx
 
-		pop ebx
 		pop esi
+		pop ebx
 
 		ret
 }

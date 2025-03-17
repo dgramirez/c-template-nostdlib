@@ -1,7 +1,17 @@
+#include "define.h"
+#include "platform.h"
 #include "par.h"
 global PlatformData *g_platform;
 
-i32
+#if EXE_ARCH == 32
+	#define APP_USZ_VALUE 1234567890
+	#define APP_ISZ_VALUE -1876543290
+#else
+	#define APP_USZ_VALUE 12345678901234567
+	#define APP_ISZ_VALUE -9876543210987654
+#endif
+
+export i32
 app_init(PlatformData *pd)
 {
 	g_platform = pd;
@@ -11,15 +21,15 @@ app_init(PlatformData *pd)
 	return 0;
 }
 
-i32
+export i32
 app_update()
 {
 	s8  str  =  s8("Hello, World!\n");
 	fb8 fb   =  {0};
 	f32 pi   =  3.14159265;
 	f32 npi  = -3.14159265;
-	usz uval =  12345678901234567;
-	isz ival = -9876543210987654;
+	usz uval =  APP_USZ_VALUE;
+	isz ival =  APP_ISZ_VALUE;
 
 	u8  cpuid_vendor[16];
 	u8  randbuf[256];
@@ -146,7 +156,7 @@ app_update()
 	return 0;
 }
 
-void
+export void
 app_close()
 {
 	g_platform->run_app = 0;

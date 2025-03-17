@@ -2,6 +2,7 @@
 SETLOCAL
 
 SET bin_name=template
+SET app_name=libapp
 
 SET root=
 SET inc=
@@ -27,6 +28,14 @@ SET xp_arch=
 SET xp_subsysver=
 SET fasm_arch=
 SET cc_name=
+SET cc_objs_app=
+SET cc_flags_app=
+SET link_flags_app=
+SET cc_flags_common=
+SET link_flags_common=
+SET link_dbg_app=
+SET link_rel_app=
+SET link_drl_app=
 
 SET args_errored=
 CALL :fill_args %1
@@ -88,7 +97,8 @@ SET out_rel=%out%\%cc_name%\release
 SET out_drl=%out%\%cc_name%\debug-release
 
 :: Configuration Setup
-set cc_objs=entry-x86_64-win32.c entry-x86_64.obj
+SET cc_objs=entry-x86_64-win32.c entry-x86_64.obj
+SET cc_objs_app=libapp.c
 IF ["%compiler%"] == ["cl"]     ( CALL :config_msvc )
 IF ["%compiler%"] == ["zig cc"] ( CALL :config_zig )
 
@@ -101,19 +111,31 @@ PUSHD "%SRC%"
 
 	SET /A "1/(build&1)" 2>nul && (
 		IF NOT EXIST "%out_dbg%" ( mkdir %out_dbg% )
+
 		%compiler% %cc_flags% %cc_dbg% %cc_objs% %link_flags% %link_dbg%
+
+		%compiler% %cc_flags_app% %cc_dbg_app% %cc_objs_app% ^
+			%link_flags_app% %link_dbg_app%
 	)
 	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&2)" 2>nul && (
 		IF NOT EXIST "%out_rel%" ( mkdir %out_rel% )
+		
 		%compiler% %cc_flags% %cc_rel% %cc_objs% %link_flags% %link_rel%
+
+		%compiler% %cc_flags_app% %cc_rel_app% %cc_objs_app% ^
+			%link_flags_app% %link_rel_app%
 	)
 	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&4)" 2>nul && (
 		IF NOT EXIST "%out_drl%" ( mkdir %out_drl% )
+
 		%compiler% %cc_flags% %cc_drl% %cc_objs% %link_flags% %link_drl%
+
+		%compiler% %cc_flags_app% %cc_drl_app% %cc_objs_app% ^
+			%link_flags_app% %link_drl_app%
 	)
 
 	del /S /Q /F *.obj *.o *.pdb >nul 2>nul
@@ -260,8 +282,10 @@ GOTO :EOF
 GOTO :EOF
 
 :config_msvc
+	SET cc_flags_common=
+
 	SET cc_objs=%cc_objs% Kernel32.lib User32.lib Gdi32.lib Opengl32.lib
-	SET cc_flags= /EHa- /fp:except- /fp:fast /GL- /Gm- /GR- /GS- /W4 /WX ^
+	SET cc_flags=/EHa- /fp:except- /fp:fast /GL- /Gm- /GR- /GS- /W4 /WX ^
 	/Gs2147483647 /nologo /wd4201 /I"%inc%" %cc_flags%
 	SET link_flags=/link /WX /STACK:0x200000,0x200000 /INCREMENTAL:NO ^
 	/NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:CONSOLE%xp_subsysver%
@@ -273,6 +297,14 @@ GOTO :EOF
 	SET link_dbg=/DEBUG:FULL /OUT:"%out_dbg%\%bin_name%.exe"
 	SET link_rel=/DEBUG:NONE /RELEASE /OUT:"%out_rel%\%bin_name%.exe"
 	SET link_drl=/DEBUG:FULL /OUT:"%out_drl%\%bin_name%.exe"
+
+	SET cc_flags_app=/D_USRDLL /D_WINDLL %cc_flags%
+	SET link_flags_app=/link /Wx /STACK:0x200000,0x200000 /INCREMENTAL:NO ^
+	/NODEFAULTLIB /NOENTRY /DLL
+
+	SET link_dbg_app=/DEBUG:FULL /OUT:"%out_dbg%\%app_name%.dll"
+	SET link_rel_app=/DEBUG:NONE /RELEASE /OUT:"%out_rel%\%app_name%.dll"
+	SET link_drl_app=/DEBUG:FULL /OUT:"%out_drl%\%app_name%.dll"
 GOTO :EOF
 
 :config_zig
@@ -280,13 +312,21 @@ GOTO :EOF
 	FOR /F "tokens=* delims=" %%i IN ('where zig') DO SET "TEMP=%%~dpi"
 	SET TEMP="%TEMP%\lib\libc\include\any-windows-any"
 
-	SET cc_objs=%cc_objs% -lkernel32 -luser32 -lgdi32 -lopengl32
-	SET cc_flags=-target x86_64-windows-gnu -std=c99 -nostdlib -D_ZIG ^
+	SET cc_flags_app=-target x86_64-windows-gnu -std=c99 -nostdlib -D_ZIG ^
 	-Wall -Werror -Wno-unused-function  ^
 	-fno-asynchronous-unwind-tables -fno-rtti -fno-builtin -fno-exceptions ^
 	-fno-signed-zeros -ffinite-math-only -ffast-math ^
-	-I %inc% -isystem %TEMP% -mno-stack-arg-probe -z stack-size=0x200000 ^
-	-e "_start" /SUBSYSTEM:WINDOWS /NODEFAULTLIB -fno-sanitize=all ^
+	-I %inc% -mno-stack-arg-probe -z stack-size=0x200000 -fno-sanitize=all ^
+	-isystem %TEMP% /NODEFAULTLIB
+
+	SET link_flags_app=/DLL /NOENTRY -shared
+
+	SET link_dbg_app=/DEBUG:FULL /OUT:"%out_dbg%\%app_name%.dll"
+	SET link_rel_app=/DEBUG:NONE /RELEASE /OUT:"%out_rel%\%app_name%.dll"
+	SET link_drl_app=/DEBUG:FULL /OUT:"%out_drl%\%app_name%.dll"
+
+	SET cc_objs=%cc_objs% -lkernel32 -luser32 -lgdi32 -lopengl32
+	SET cc_flags=%cc_flags_app% -e "_start" /SUBSYSTEM:CONSOLE ^
 	%cc_flags%
 
 	SET cc_dbg=-O0 -g -fdebug-macro -fno-standalone-debug /DEBUG:FULL ^

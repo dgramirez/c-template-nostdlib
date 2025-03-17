@@ -1,13 +1,6 @@
 #ifndef INCLUDE_DEFINE_H
 #define INCLUDE_DEFINE_H
 
-#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
-	#define EXE_ARCH 32
-#endif
-#if defined(__x86_64__) || defined(_M_X64)
-	#define EXE_ARCH 64
-#endif
-
 #define local  static
 #define global static
 #define sticky static
@@ -70,6 +63,22 @@
 
 #define deffn_dlsym(solib, name) \
 	name = (PFN_##name)dlsym(solib, #name)
+
+#define deffn_dll(dll, name) \
+	name = (PFN_##name)GetProcAddress(dll, #name)
+
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	#define EXE_ARCH 32
+#endif
+#if defined(__x86_64__) || defined(_M_X64)
+	#define EXE_ARCH 64
+#endif
+
+#if defined(_WIN32)
+	#define export __declspec(dllexport)
+#else
+	#define export
+#endif
 
 #endif // INCLUDE_DEFINE_H
 
