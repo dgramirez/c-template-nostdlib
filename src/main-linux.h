@@ -16,6 +16,34 @@
 	#include <dlfcn.h>
 #endif
 
+/////////////
+// Structs //
+/////////////
+typedef struct {
+	b8     mb;
+	fb8    cb;
+	fb8    fb;
+	fb8    nb;
+	u32    flags_level;
+	u32    flags_format;
+} Logger;
+global Logger _g_logger = {0};
+
+typedef struct {
+	usz msec;
+	usz usec;
+	usz nsec;
+
+	u8 hour;
+	u8 min;
+	u8 sec;
+	u8 dst;
+
+	u8 month;
+	u8 day;
+	u16 year;
+} LogTime;
+
 local void
 mmm_sleep(void *args);
 
@@ -24,6 +52,30 @@ fb8_write(fb8 *b);
 
 local b8
 get_cpu_vendor(u8 *buffer, usz len);
+
+local void
+linux_init_logger(MArena *arena,
+                  u32   flags_level,
+                  u32   format_level);
+
+local void
+linux_log(u32 level,
+          const char *msg,
+          const char *file,
+          usz linenum,
+          const char *fnname);
+
+local void
+linux_get_time(LogTime *lt);
+
+local void
+linux_get_date(LogTime *lt);
+
+local void
+linux_get_datetime(LogTime *lt);
+
+local int
+is_leap_year(int year);
 
 declfn(i32, app_init, unref(pd);return -1;, PlatformData *pd);
 declfn(i32, app_update, return -1;);

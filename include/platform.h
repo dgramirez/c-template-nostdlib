@@ -57,13 +57,5 @@ typedef union {
 	usz  *pusz;
 } MemUnion;
 
-#ifdef USING_LIBC
-	#include <linux/futex.h>
-	#include <linux/sched.h>
-	#include <sys/mman.h>
-	#include <fcntl.h>
-	#include <errno.h>
-#endif
-
 #endif // INCLUDE_PLATFORM_H
 

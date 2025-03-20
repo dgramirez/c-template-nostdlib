@@ -3,7 +3,14 @@
 
 #include "platform.h"
 
-#ifndef USING_LIBC
+#ifdef USING_LIBC
+	#include <linux/time.h>
+	#include <linux/futex.h>
+	#include <linux/sched.h>
+	#include <sys/mman.h>
+	#include <fcntl.h>
+	#include <errno.h>
+#else
 // standard fd arguments
 #define	STDIN_FILENO     0  /* Standard input. */
 #define	STDOUT_FILENO    1  /* Standard output. */
@@ -117,9 +124,32 @@
 #define FUTEX_WAIT_REQUEUE_PI_PRIVATE    (FUTEX_WAIT_REQUEUE_PI | FUTEX_PRIVATE_FLAG)
 #define FUTEX_CMP_REQUEUE_PI_PRIVATE     (FUTEX_CMP_REQUEUE_PI | FUTEX_PRIVATE_FLAG)
 
+// linux/time.h
+#define CLOCK_REALTIME              0
+#define CLOCK_MONOTONIC             1
+#define CLOCK_PROCESS_CPUTIME_ID    2
+#define CLOCK_THREAD_CPUTIME_ID     3
+#define CLOCK_MONOTONIC_RAW         4
+#define CLOCK_REALTIME_COARSE       5
+#define CLOCK_MONOTONIC_COARSE      6
+#define CLOCK_BOOTTIME              7
+#define CLOCK_REALTIME_ALARM        8
+#define CLOCK_BOOTTIME_ALARM        9
+
 /* cloning flags intersect with CSIGNAL so can be used only with unshare and
    clone3 syscalls.  */
 #define CLONE_NEWTIME	0x00000080      /* New time namespace */
+
+struct timeval {
+	time_t tv_sec;
+	time_t tv_usec;
+};
+
+struct timezone {
+	int tz_minuteswest;
+	int tz_dsttime;
+};
+
 #endif // USING_LIBC
 
 #define IS_SYSCALL_ERR(x) (((isz)(x) < 0) && ((isz)(x) > -4096))
@@ -315,12 +345,21 @@ extern void
 sys_exit(int status);
 
 extern long
+sys_gettimeofday(struct timeval *tv,
+                 struct timezone *tz);
+
+extern long
 sys_futex(uint32_t *uaddr,
           int op,
           uint32_t val,
           const struct timespec *utime,
           uint32_t *uaddr2,
           uint32_t val3);
+
+
+extern int
+sys_clock_gettime(const __clockid_t clockid,
+                  struct timespec *tp);
 
 extern int
 sys_openat(int dirfd,

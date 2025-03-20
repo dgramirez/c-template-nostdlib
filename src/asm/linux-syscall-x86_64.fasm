@@ -99,6 +99,15 @@ sys_exit:
 
 	ret              ; This shouldn't be reached...
 
+public sys_gettimeofday
+sys_gettimeofday:
+	use64
+
+	mov rax, 96
+	syscall
+
+	ret
+
 public sys_futex
 sys_futex:
 	use64
@@ -109,6 +118,15 @@ sys_futex:
 	syscall
 
 	popq r10
+	ret
+
+public sys_clock_gettime
+sys_clock_gettime:
+	use64
+	
+	mov rax, 228
+	syscall
+
 	ret
 
 public sys_openat

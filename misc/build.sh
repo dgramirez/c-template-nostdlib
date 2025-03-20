@@ -15,13 +15,23 @@ if [[ ! -d ${OUT} ]]; then
 fi
 
 cd "${SRC}"
+
+echo compilation test
 fasm entry-x86_64.fasm -d PLATFORM=LINUX
+$CC main-linux.c entry-x86_64.o -nostdlib \
+	-Wall -Wno-unused-function -O0    -g \
+	-D_DEBUG \
+	-I "${INC}" \
+	-o "${OUT}/template-compile-only"
+
+echo true application compilation
 $CC main-linux.c entry-x86_64.o -nostdlib \
 	-Wall -Wno-unused-function -O0    -g \
 	-D_DEBUG -DUSING_LIBC -lc \
 	-I "${INC}" \
 	-o "${OUT}/template"
 
+echo app compilation
 $CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
 	-Wall -Wno-unused-function -O0    -g \
 	-I "${INC}" \
