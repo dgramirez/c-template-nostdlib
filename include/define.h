@@ -48,14 +48,18 @@
 #define page_size KB(4)
 
 #if defined(_DEBUG)
-	#define assert(x, s) if (!(x)) *((volatile int*)0) = 0;
+	#define assert(x, s) if (!(x)) { \
+		*((volatile int*)0) = 0; \
+	}
+#elif defined(_DEBUG_RELEASE)
+	#define assert(x, s) if (!(x)) { log_assert(s); }
 #else
 	#define assert(x, s) ;
 #endif
 
 #define declfn(rtype, name, rcode, ...) \
 	typedef rtype (*PFN_##name)(__VA_ARGS__); \
-	rtype stub_##name(__VA_ARGS__) {rcode} \
+	local rtype stub_##name(__VA_ARGS__) {rcode} \
 	PFN_##name name = stub_##name
 
 #define deffn_wgl(name) \

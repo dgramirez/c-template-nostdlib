@@ -15,7 +15,8 @@ export i32
 app_init(PlatformData *pd)
 {
 	g_platform = pd;
-	os_write = g_platform->os_write;
+	os_write   = g_platform->os_write;
+	logsys     = g_platform->logsys;
 
 	// Returning a positive or negative number acts as an error value.
 	return 0;
@@ -31,8 +32,8 @@ app_update()
 	usz uval =  APP_USZ_VALUE;
 	isz ival =  APP_ISZ_VALUE;
 
-	u8  cpuid_vendor[16];
-	u8  randbuf[256];
+	char  cpuid_vendor[16];
+	char  randbuf[256];
 
 	fb.data = g_platform->bufapp.data;
 	fb.cap  = g_platform->bufapp.len;
@@ -88,7 +89,7 @@ app_update()
 
 	// CPUID (Provided by the Platform Layer.)
 	str = s8("CPUID Vendor: ");
-	g_platform->get_cpu_vendor(&cpuid_vendor[0], 16);
+	g_platform->get_cpu_vendor((u8 *)&cpuid_vendor[0], 16);
 	fb8_append_cstr(&fb, &cpuid_vendor[0], 12);
 	fb8_append_lf(&fb);
 	fb8_append_lf(&fb);
@@ -132,7 +133,7 @@ app_update()
 	randbuf[128] = '>';
 	randbuf[129] = ' ';
 	memmoveu_usz(&randbuf[2], &randbuf[130], 126);
-	fb8_append_cstr(&fb, (u8 *)randbuf, 256);
+	fb8_append_cstr(&fb, randbuf, 256);
 	fb8_append_lf(&fb);
 	fb8_flush(&fb);
 
@@ -144,9 +145,27 @@ app_update()
 	randbuf[128] = '>';
 	randbuf[129] = ' ';
 	memmoveu_usz(&randbuf[130], &randbuf[2], 126);
-	fb8_append_cstr(&fb, (u8 *)randbuf, 256);
+	fb8_append_cstr(&fb, randbuf, 256);
 	fb8_append_lf(&fb);
 	fb8_flush(&fb);
+
+	log_debug("Debug: I am debugging the log defines.");
+	log_info("We're inside libapp.c. "
+			 "This is the application portion of this project!");
+	log_pass("And so far, log_debug and log_info has passed!");
+	log_odd("However, its kinda weird that I'm logging at different "
+			"levels. Of course its a test but you don't do this normally.");
+	log_warn("So a warning: We will see two errors occur. "
+		     "Only here, would the errors not truly matter!");
+	log_error("I'm an error, but not the one that would force a close on "
+	          "your application.");
+	log_fatal("I'm the fatal error. By myself, I am like the regular "
+			 "log_error. However, Devs should terminate the program once "
+			 "I have been used! In the end, its totally up to them.");
+	log_egg("And I'm an Easter Egg! or Dev Notes... Or whatever they want "
+		    "me to be. If I am supposed to be useful, I should be in "
+			"log_info. This is just meant for cool or fun info the devs "
+			"want to show out.");
 
 	// Finish with the application (Not doing this will have the app run
 	// Continually, which may be ideal for a simple protocol client.)

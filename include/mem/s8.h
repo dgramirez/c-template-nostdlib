@@ -4,6 +4,7 @@
 #include "define.h"
 #include "platform.h"
 #include "memfn.h"
+#include "log.h"
 
 #define s8_cntof(x) (usz)(sizeof(x) / sizeof(*(x)))
 #define s8_lenof(x) (s8_cntof(x) - 1)
@@ -53,7 +54,7 @@ c_strlen(const char *start)
 	char *end = (char *const )start;
 	while (*end++);
 
-	return end - start;
+	return end - start - 1;
 }
 
 local int
@@ -414,14 +415,17 @@ fb8_append(fb8 *fb,
 }
 
 local void
-fb8_append_cstr(fb8 *fb,
-                u8  *cstr,
-                usz  len)
+fb8_append_cstr(fb8  *fb,
+                const char *cstr,
+                usz   len)
 {
 	b8 b;
-	b.data = cstr;
-	b.len  = len;
 
+	if (!len)
+		len = 0xFFFFFFFF;
+
+	b.data = (u8 *)cstr;
+	b.len  = imin(len, c_strlen(cstr));
 	fb8_append(fb, b);
 }
 

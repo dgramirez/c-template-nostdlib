@@ -4,6 +4,7 @@
 #include "define.h"
 #include "platform.h"
 #include "mem/s8.h"
+#include "log.h"
 
 // Note: To future self, this is just an example. This **should** be
 //       expanded to solve "Platform-To-App" problems.
@@ -23,6 +24,7 @@
 //       client.
 typedef struct {
 	b8 bufapp;
+	PFN_logsys logsys;
 	i32 (*os_write)(fb8 *b);
 	b8  (*get_cpu_vendor)(u8*, usz);
 	void *std_out;

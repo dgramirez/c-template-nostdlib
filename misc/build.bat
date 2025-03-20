@@ -291,8 +291,8 @@ GOTO :EOF
 	/NODEFAULTLIB /ENTRY:_start /SUBSYSTEM:CONSOLE%xp_subsysver%
 
 	SET cc_dbg=/Zi /Od /D "_DEBUG"
-	SET cc_rel=/O2 /D "NDEBUG"
-	SET cc_drl=/Zi /O2 /D "NDBEUG"
+	SET cc_rel=/O2 /D "NODEBUG"
+	SET cc_drl=/Zi /O2 /D "NODEBUG" /D "_DEBUG_RELEASE"
 
 	SET link_dbg=/DEBUG:FULL /OUT:"%out_dbg%\%bin_name%.exe"
 	SET link_rel=/DEBUG:NONE /RELEASE /OUT:"%out_rel%\%bin_name%.exe"
@@ -330,11 +330,11 @@ GOTO :EOF
 	%cc_flags%
 
 	SET cc_dbg=-O0 -g -fdebug-macro -fno-standalone-debug /DEBUG:FULL ^
-	-o "%out_dbg%\%bin_name%.exe"
-	SET cc_rel=-O2 -fno-debug-macro /DEBUG:NONE ^
+	-D_DEBUG -o "%out_dbg%\%bin_name%.exe"
+	SET cc_rel=-O2 -fno-debug-macro /DEBUG:NONE -DNDEBUG ^
 	-o "%out_rel%\%bin_name%.exe"
 	SET cc_drl=-O2 -g -fdebug-macro -fno-standalone-debug /DEBUG:FULL ^
-	/RELEASE -o "%out_drl%\%bin_name%.exe"
+	/RELEASE -DNDEBUG -D_DEBUG_RELEASE -o "%out_drl%\%bin_name%.exe"
 GOTO :EOF
 
 :config_xp32
