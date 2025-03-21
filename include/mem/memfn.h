@@ -827,5 +827,30 @@ local pfn_memzero memzerou = memzerou_usz;
 	}
 #endif
 
+#if defined(_MSC_VER)
+	void *memset(void *dst, int c, size_t count);
+	#pragma function(memset)
+
+	void *memcpy(void *dst, const void *src, size_t count);
+	#pragma function(memcpy)
+
+	void *memset(void *dst, int c, size_t count)
+	{
+		#if EXE_ARCH == 32
+			usz _c = (usz)c;
+		#else
+			usz _c = (usz)c | ((usz)c << 32);
+		#endif
+		memsetu(dst, _c, count);
+		return dst;
+	}
+	
+	void *memcpy(void *dst, const void *src, size_t count)
+	{
+		memcpyu(dst, (void*)src, count);
+		return dst;
+	}
+#endif 
+
 #endif // INCLUDE_MEM_MEMFN_H
 

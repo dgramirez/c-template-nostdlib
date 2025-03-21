@@ -1,28 +1,8 @@
 #ifndef SRC_ENTRY_WIN32_H
 #define SRC_ENTRY_WIN32_H
 
-#include "asm/cpuid.h"
-#include "mem/memfn.h"
-#include "mem/arena.h"
-#include "mem/pool.h"
-#include "par.h"
-#include "log.h"
+#include "platform/win32.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-/////////////
-// Structs //
-/////////////
-typedef struct {
-	b8     mb;
-	fb8    cb;
-	fb8    fb;
-	fb8    nb;
-	u32    flags_level;
-	u32    flags_format;
-} Logger;
-global Logger _g_logger = {0};
 
 /////////////
 // Helpers //
