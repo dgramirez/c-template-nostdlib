@@ -49,7 +49,7 @@
 
 #if defined(_DEBUG)
 	#define assert(x, s) if (!(x)) { \
-		*((volatile int*)0) = 0; \
+		*((volatile int*)0xD3D) = 0; \
 	}
 #elif defined(_DEBUG_RELEASE)
 	#define assert(x, s) if (!(x)) { log_assert(s); }

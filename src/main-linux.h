@@ -77,6 +77,14 @@ linux_get_datetime(LogTime *lt);
 local int
 is_leap_year(int year);
 
+local void
+linux_setup_crash_handler();
+
+local void
+linux_crash_handler(int signo,
+                    siginfo_t *info,
+                    void* context);
+
 declfn(i32, app_init, unref(pd);return -1;, PlatformData *pd);
 declfn(i32, app_update, return -1;);
 declfn(void, app_close,);

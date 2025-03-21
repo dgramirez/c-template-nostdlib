@@ -68,6 +68,18 @@ sys_munmap:
 
 	ret
 
+public sys_rt_sigaction
+sys_rt_sigaction:
+	use64
+	pushq r10
+
+	mov rax, 13
+	mov r10, rcx
+	syscall
+
+	popq r10
+	ret
+
 public sys_nanosleep
 sys_nanosleep:
 	use64

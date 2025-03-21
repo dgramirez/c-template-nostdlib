@@ -12,6 +12,11 @@ main(int argc,
 	os_write = fb8_write;
 	logsys = linux_log;
 
+	buffer = mmap_anon(MB(128));
+	marena_init(&sysmem, buffer, MB(128), page_size);
+
+	linux_init_logger(&sysmem, 0xFF, 0xF);
+	linux_setup_crash_handler();
 	// TODO: Turn this entire section into a threadpool!
 //	StackHead *sh = (StackHead *)((u8 *)mmap_anon(KB(4)) + KB(4) - sizeof(StackHead));
 //	struct timespec ts;
@@ -51,10 +56,6 @@ main(int argc,
 	assert(app_init,   "Failed to get app_init from libapp.so");
 	assert(app_update, "Failed to get app_update from libapp.so");
 	assert(app_close,  "Failed to get app_close from libapp.so");
-
-	buffer = mmap_anon(MB(128));
-	marena_init(&sysmem, buffer, MB(128), page_size);
-	linux_init_logger(&sysmem, 0xFF, 0xF);
 
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
@@ -365,6 +366,71 @@ local int
 is_leap_year(int year)
 {
 	return ((year % 4 == 0 ) && (year % 100 != 0)) || (year % 400 == 0);
+}
+
+typedef struct {
+	union {
+		void (*handler_fn)(int);
+		void (*sigaction_fn)(int, siginfo_t *, void*);
+	};
+	int sa_flags;
+	void (*restorer_fn)(void);
+	sigset_t sa_mask;
+} ImDumb;
+
+local void
+linux_setup_crash_handler()
+{
+	ImDumb sa = {0};
+    sa.sigaction_fn = linux_crash_handler;
+    sa.sa_flags      = 0x4 | SA_RESTORER;
+	char b[256];
+	fb8  fb = {0};
+	int err;
+
+	fb.data = (u8 *)b;
+	fb.cap  = 256;
+
+//	err = sigaction(SIGSEGV, (struct sigaction *)&sa, 0);
+	err = sys_rt_sigaction(SIGSEGV, (struct sigaction *)&sa, 0, 8);
+    if (IS_SYSCALL_ERR(err)) {
+		fb8_append_cstr(&fb, "SIGSEGV Registration has failed. . .", 0);
+		fb8_append_lf(&fb);
+		fb8_append_cstr(&fb, "Error: ", 0);
+		fb8_append_isz(&fb, SYSCALL_ERR_VAL(err));
+		fb8_append_byte(&fb, ' ');
+		fb8_append_byte(&fb, '(');
+		fb8_append_isz(&fb, sizeof(sigset_t));
+		fb8_append_byte(&fb, ')');
+		fb8_append_lf(&fb);
+		fb8_append_lf(&fb);
+
+		fb8_flush(&fb);
+	}
+
+	err = sys_rt_sigaction(SIGBUS, (struct sigaction *)&sa, 0, 8);
+    if (IS_SYSCALL_ERR(err)) {
+		fb8_append_cstr(&fb, "SIGBUS Registration has failed. . .", 0);
+		fb8_append_lf(&fb);
+		fb8_append_cstr(&fb, "Error: ", 0);
+		fb8_append_isz(&fb, SYSCALL_ERR_VAL(err));
+		fb8_append_lf(&fb);
+		fb8_append_lf(&fb);
+
+		fb8_flush(&fb);
+	}
+
+	sys_write(0, "Crash Handler Setup...\n", c_strlen("Crash Handler Setup...\n"));
+}
+
+local void
+linux_crash_handler(int signo,
+                    siginfo_t *info,
+                    void* context)
+{
+//	struct ucontext_t* ctx = (struct ucontext_t*)context;
+	log_fatal("A Crash Has Occurred!\n");
+	sys_exit(0);
 }
 
 void *memset(void *s, int c, size_t n)

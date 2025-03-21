@@ -3,6 +3,8 @@
 
 #include "platform.h"
 
+#define SA_RESTORER 0x04000000
+
 #ifdef USING_LIBC
 	#include <linux/time.h>
 	#include <linux/futex.h>
@@ -10,6 +12,8 @@
 	#include <sys/mman.h>
 	#include <fcntl.h>
 	#include <errno.h>
+	#include <signal.h>
+	#include <unistd.h>
 #else
 // standard fd arguments
 #define	STDIN_FILENO     0  /* Standard input. */
@@ -140,6 +144,69 @@
    clone3 syscalls.  */
 #define CLONE_NEWTIME	0x00000080      /* New time namespace */
 
+// asm-generic/signal.h
+#define SIGHUP		 1
+#define SIGINT		 2
+#define SIGQUIT		 3
+#define SIGILL		 4
+#define SIGTRAP		 5
+#define SIGABRT		 6
+#define SIGIOT		 6
+#define SIGBUS		 7
+#define SIGFPE		 8
+#define SIGKILL		 9
+#define SIGUSR1		10
+#define SIGSEGV		11
+#define SIGUSR2		12
+#define SIGPIPE		13
+#define SIGALRM		14
+#define SIGTERM		15
+#define SIGSTKFLT	16
+#define SIGCHLD		17
+#define SIGCONT		18
+#define SIGSTOP		19
+#define SIGTSTP		20
+#define SIGTTIN		21
+#define SIGTTOU		22
+#define SIGURG		23
+#define SIGXCPU		24
+#define SIGXFSZ		25
+#define SIGVTALRM	26
+#define SIGPROF		27
+#define SIGWINCH	28
+#define SIGIO		29
+#define SIGPOLL		SIGIO
+/*
+#define SIGLOST		29
+*/
+#define SIGPWR		30
+#define SIGSYS		31
+#define	SIGUNUSED	31
+
+
+#define SA_NOCLDSTOP	0x00000001
+#define SA_NOCLDWAIT	0x00000002
+#define SA_SIGINFO	0x00000004
+#define SA_UNSUPPORTED	0x00000400
+#define SA_EXPOSE_TAGBITS	0x00000800
+#define SA_ONSTACK	0x08000000
+#define SA_RESTART	0x10000000
+#define SA_NODEFER	0x40000000
+#define SA_RESETHAND	0x80000000
+
+
+typedef void (*__sighandler_t) (int);
+
+typedef int   pid_t;
+typedef pid_t uid_t;
+typedef usz   clock_t;
+
+union sigval
+{
+  int sival_int;
+  void *sival_ptr;
+};
+
 struct timeval {
 	time_t tv_sec;
 	time_t tv_usec;
@@ -150,10 +217,83 @@ struct timezone {
 	int tz_dsttime;
 };
 
+struct ucontext_t {
+    uint64_t uc_flags;
+    struct {
+        uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
+        uint64_t rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip;
+    } regs;
+};
+
+#define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
+typedef struct
+{
+  unsigned long int __val[_SIGSET_NWORDS];
+} __sigset_t;
+
+//struct siginfo_t {
+//    int      si_signo;     /* Signal number */
+//    int      si_errno;     /* An errno value */
+//    int      si_code;      /* Signal code */
+//    int      si_trapno;    /* Trap number that caused
+//                              hardware-generated signal
+//                              (unused on most architectures) */
+//    pid_t    si_pid;       /* Sending process ID */
+//    uid_t    si_uid;       /* Real user ID of sending process */
+//    int      si_status;    /* Exit value or signal */
+//    clock_t  si_utime;     /* User time consumed */
+//    clock_t  si_stime;     /* System time consumed */
+//    union sigval si_value; /* Signal value */
+//    int      si_int;       /* POSIX.1b signal */
+//    void    *si_ptr;       /* POSIX.1b signal */
+//    int      si_overrun;   /* Timer overrun count;
+//                              POSIX.1b timers */
+//    int      si_timerid;   /* Timer ID; POSIX.1b timers */
+//    void    *si_addr;      /* Memory location which caused fault */
+//    long     si_band;      /* Band event (was int in
+//                              glibc 2.3.2 and earlier) */
+//    int      si_fd;        /* File descriptor */
+//    short    si_addr_lsb;  /* Least significant bit of address
+//                              (since Linux 2.6.32) */
+//    void    *si_lower;     /* Lower bound when address violation
+//                              occurred (since Linux 3.19) */
+//    void    *si_upper;     /* Upper bound when address violation
+//                              occurred (since Linux 3.19) */
+//    int      si_pkey;      /* Protection key on PTE that caused
+//                              fault (since Linux 4.6) */
+//    void    *si_call_addr; /* Address of system call instruction
+//                              (since Linux 3.5) */
+//    int      si_syscall;   /* Number of attempted system call
+//                              (since Linux 3.5) */
+//    unsigned int si_arch;  /* Architecture of attempted system call
+//                              (since Linux 3.5) */
+//};
+
+//struct sigaction
+//{
+//	union {
+//		/* Used if SA_SIGINFO is not set.  */
+//		__sighandler_t sa_handler;
+//		/* Used if SA_SIGINFO is set.  */
+//		void (*sa_sigaction) (int, struct siginfo_t *, void *);
+//	};
+//
+//	/* Additional set of signals to be blocked.  */
+//	__sigset_t sa_mask;
+//
+//	/* Special flags.  */
+//	int sa_flags;
+//
+//	/* Restore handler.  */
+//	void (*sa_restorer) (void);
+//  };
+
+
+
 #endif // USING_LIBC
 
 #define IS_SYSCALL_ERR(x) (((isz)(x) < 0) && ((isz)(x) > -4096))
-#define SYSCAL_ERR_VAL(x) (-(x))
+#define SYSCALL_ERR_VAL(x) (-(x))
 
 ///////////
 //  Auxv //
@@ -329,6 +469,12 @@ extern int
 sys_munmap(void *addr,
            size_t length);
 
+extern int
+sys_rt_sigaction(int sig,
+                 struct sigaction *act,
+                 struct sigaction *oact,
+                 size_t sigset_t_size);
+
 extern long
 sys_nanosleep(const struct timespec *req,
               struct timespec *rem);
@@ -355,7 +501,6 @@ sys_futex(uint32_t *uaddr,
           const struct timespec *utime,
           uint32_t *uaddr2,
           uint32_t val3);
-
 
 extern int
 sys_clock_gettime(const __clockid_t clockid,
