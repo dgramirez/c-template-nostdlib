@@ -815,5 +815,17 @@ typedef void (*pfn_memzero)(void *, usz);
 local pfn_memzero memzeroa = memzeroa_usz;
 local pfn_memzero memzerou = memzerou_usz;
 
+#ifdef __linux__
+	void *memset(void *s, int c, size_t n)
+	{
+		// NOTE [32-Bit]: Bad for 32-bit support
+		usz csz;
+
+		csz= c | ((usz)c << 32);
+		memsetu(s, csz, n);
+		return s;
+	}
+#endif
+
 #endif // INCLUDE_MEM_MEMFN_H
 

@@ -3,8 +3,7 @@
 
 #include "define.h"
 #include "platform.h"
-#include "asm/linux-syscall.h"
-#include <linux/futex.h>
+#include "linux.h"
 
 typedef void (*FnEntry)(void *);
 typedef struct __attribute((aligned(16))) stack_head {

@@ -1,6 +1,7 @@
 #include "define.h"
 #include "platform.h"
-#include "par.h"
+#include "platform/common.h"
+
 global PlatformData *g_platform;
 
 #if EXE_ARCH == 32

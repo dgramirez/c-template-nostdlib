@@ -4,7 +4,7 @@
 #include "define.h"
 #include "platform.h"
 #include "memfn.h"
-#include "log.h"
+#include "platform/common/log.h"
 
 #define s8_cntof(x) (usz)(sizeof(x) / sizeof(*(x)))
 #define s8_lenof(x) (s8_cntof(x) - 1)

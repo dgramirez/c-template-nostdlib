@@ -18,12 +18,12 @@ cd "${SRC}"
 
 fasm entry-x86_64.fasm -d PLATFORM=LINUX
 
-#echo compilation test
-#$CC main-linux.c entry-x86_64.o -nostdlib \
-#	-Wall -Wno-unused-function -O0    -g \
-#	-D_DEBUG \
-#	-I "${INC}" \
-#	-o "${OUT}/template-compile-only"
+echo compilation test
+$CC main-linux.c entry-x86_64.o -nostdlib \
+	-Wall -Wno-unused-function -O0    -g \
+	-D_DEBUG \
+	-I "${INC}" \
+	-o "${OUT}/template-compile-only"
 
 echo true application compilation
 $CC main-linux.c entry-x86_64.o -nostdlib \
