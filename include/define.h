@@ -62,6 +62,9 @@
 	local rtype stub_##name(__VA_ARGS__) {rcode} \
 	PFN_##name name = stub_##name
 
+#define declfn_type(rtype, name, ...) \
+	typedef rtype (*PFN_##name)(__VA_ARGS__);
+
 #define deffn_wgl(name) \
 	name = (PFN_##name)wglGetProcAddress(#name)
 

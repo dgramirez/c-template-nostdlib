@@ -7,6 +7,8 @@ Win32Main(int argc, s8 *argv)
 	PlatformData pd = {0};
 	void *buffer;
 
+	SetUnhandledExceptionFilter(win32_crash_handler);
+
 	os_write = Win32WriteFile;
 	logsys = win32_log;
 
@@ -44,6 +46,8 @@ Win32Main(int argc, s8 *argv)
 		Sleep(1);
 	}
 	app_close();
+
+	*((volatile int*)0xD3D) = 0;
 
 	unref(argc);
 	unref(argv);

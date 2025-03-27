@@ -54,6 +54,8 @@ win32_log(u32 level,
           const char *fnname)
 {
 	SYSTEMTIME lt = {0};
+	FILETIME   ft = {0};
+	ULONGLONG  time_100ns;
 	CONSOLE_SCREEN_BUFFER_INFO csbi = {0};
 	usz is_assert;
 	if (!_g_logger.flags_level || !_g_logger.flags_format)
@@ -155,7 +157,16 @@ win32_log(u32 level,
 	fb8_append_byte(&_g_logger.cb, ':');
 	fb8_append_usz(&_g_logger.cb, lt.wSecond);
 	fb8_append_byte(&_g_logger.cb, '.');
-	fb8_append_usz(&_g_logger.cb, lt.wMilliseconds);
+	#if EXE_ARCH == 32
+		fb8_append_usz(&_g_logger.cb, lt.wMilliseconds);
+		unref(time_100ns);
+		unref(ft);
+	#else
+		GetSystemTimeAsFileTime(&ft);
+		time_100ns = ((ULONGLONG)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+		time_100ns %= 10000000;
+		fb8_append_usz(&_g_logger.cb, time_100ns);
+	#endif
 	fb8_append_byte(&_g_logger.cb, ']');
 
 	// "file(line_num): fnname"
@@ -176,6 +187,123 @@ win32_log(u32 level,
 	fb8_append_lf(&_g_logger.cb);
 	fb8_append_lf(&_g_logger.cb);
 	fb8_flush(&_g_logger.cb);
+}
+
+#ifdef _MSC_VER
+#if EXE_ARCH == 32
+declfn_type(EXCEPTION_DISPOSITION,
+            Win32_SEH,
+            struct _EXCEPTION_RECORD *,
+            void *,
+            struct _CONTEXT *,
+            void *);
+
+EXCEPTION_DISPOSITION
+_except_handler3(struct _EXCEPTION_RECORD *ExceptionRecord,
+                 void * EstablisherFrame,
+                 struct _CONTEXT *ContextRecord,
+                 void *DispatcherContext)
+{
+	static PFN_Win32_SEH fn;
+	if (!fn) {
+		HMODULE eww_c_runtime = LoadLibraryA("msvcrt.dll");
+		fn = (PFN_Win32_SEH)GetProcAddress(eww_c_runtime,
+		                                   "__C_specific_handler");
+	}
+
+	return fn(ExceptionRecord,
+	          EstablisherFrame,
+	          ContextRecord,
+	          DispatcherContext);
+}
+
+UINT_PTR __security_cookie = 0xBB40E64E;
+extern PVOID __safe_se_handler_table[];
+extern BYTE __safe_se_handler_count;
+
+typedef struct {
+	DWORD      Size;
+	DWORD      TimeDateStamp;
+	WORD       MajorVersion;
+	WORD       MinorVersion;
+	DWORD      GlobalFlagsClear;
+	DWORD      GlobalFlagsSet;
+	DWORD      CriticalSectionDefaultTimeout;
+	DWORD      DeCommitFreeBlockThreshold;
+	DWORD      DeCommitTotalFreeThreshold;
+	DWORD      LockPrefixTable;
+	DWORD      MaximumAllocationSize;
+	DWORD      VirtualMemoryThreshold;
+	DWORD      ProcessHeapFlags;
+	DWORD      ProcessAffinityMask;
+	WORD       CSDVersion;
+	WORD       Reserved1;
+	DWORD      EditList;
+	PUINT_PTR  SecurityCookie;
+	PVOID     *SEHandlerTable;
+	DWORD      SEHandlerCount;
+} IMAGE_LOAD_CONFIG_DIRECTORY32_2;
+
+const
+IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used = {
+	sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_2),
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	&__security_cookie,
+	__safe_se_handler_table,
+	(DWORD)(DWORD_PTR)&__safe_se_handler_count
+};
+#else
+declfn_type(EXCEPTION_DISPOSITION,
+            Win32_SEH,
+			struct _EXCEPTION_RECORD *,
+            void *,
+            struct _CONTEXT *,
+            struct _DISPATCHER_CONTEXT *);
+
+EXCEPTION_DISPOSITION
+__C_specific_handler(struct _EXCEPTION_RECORD *ExceptionRecord,
+					 void * EstablisherFrame,
+					 struct _CONTEXT *ContextRecord,
+					 struct _DISPATCHER_CONTEXT *DispatcherContext)
+{
+	static PFN_Win32_SEH fn;
+	if (!fn) {
+		HMODULE eww_c_runtime = LoadLibraryA("msvcrt.dll");
+		fn = (PFN_Win32_SEH)GetProcAddress(eww_c_runtime,
+		                                   "__C_specific_handler");
+	}
+
+	return fn(ExceptionRecord,
+	          EstablisherFrame,
+	          ContextRecord,
+	          DispatcherContext);
+}
+#endif // EXE_ARCH == 32
+#else
+#endif // _MSC_VER
+
+LONG WINAPI
+win32_crash_handler(EXCEPTION_POINTERS *ExceptionInfo)
+{
+	unref(ExceptionInfo);
+
+	log_fatal("A Crash Has Occurred!\n");
+	return EXCEPTION_EXECUTE_HANDLER;
 }
 
 #endif // INCLUDE_PLATFORM_WIN32_LOG_H

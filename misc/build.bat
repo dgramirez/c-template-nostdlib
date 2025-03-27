@@ -138,7 +138,7 @@ PUSHD "%SRC%"
 			%link_flags_app% %link_drl_app%
 	)
 
-	del /S /Q /F *.obj *.o *.pdb >nul 2>nul
+	del /S /Q /F *.obj *.o *.pdb *.lib >nul 2>nul
 POPD
 
 ENDLOCAL
