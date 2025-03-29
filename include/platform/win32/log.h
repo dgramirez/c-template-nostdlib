@@ -152,7 +152,17 @@ win32_log(u32 level,
 			fb8_append_cstr(&_g_logger.cb, "===============\n", 0);
 		} break;
 
-		default: assert(0, "Must be a single level!");
+		default: {
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED);
+			fb8_append_cstr(&_g_logger.cb, "==================\n", 0);
+			fb8_append_cstr(&_g_logger.cb, "= INTERNAL ERROR =\n", 0);
+			fb8_append_cstr(&_g_logger.cb, "==================\n", 0);
+
+			SetConsoleTextAttribute(_g_logger.cb.fd, csbi.wAttributes);
+			fb8_append_cstr(&_g_logger.cb, "Must be a single level!\n", 0);
+			fb8_flush(&_g_logger.cb);
+			ExitProcess(0);
+		}
 	}
 
 	fb8_flush(&_g_logger.cb);
@@ -190,7 +200,7 @@ win32_log(u32 level,
 	// "file(line_num): fnname"
 	if (is_assert) {
 		fb8_append(&_g_logger.cb, s8("Assert: True\n"));
-		fb8_append_byte(&_g_logger.cb, '\n');
+
 		fb8_append_cstr(&_g_logger.cb, file, 0);
 		fb8_append_byte(&_g_logger.cb, '(');
 		fb8_append_usz( &_g_logger.cb, linenum);
@@ -198,6 +208,9 @@ win32_log(u32 level,
 		fb8_append_byte(&_g_logger.cb, ':');
 		fb8_append_byte(&_g_logger.cb, ' ');
 		fb8_append_cstr(&_g_logger.cb, fnname, 0);
+		fb8_append_lf(&_g_logger.cb);
+		fb8_append_lf(&_g_logger.cb);
+
 		fb8_flush(&_g_logger.cb);
 	}
 }
@@ -397,6 +410,7 @@ win32_crash_print_registers(fb8 *fb, PCONTEXT ctx)
 		fb8_append_lf(fb);
 	}
 }
+
 #else
 local void
 win32_crash_print_registers(fb8 *fb, PCONTEXT ctx)

@@ -75,9 +75,9 @@ linux_log(u32 level,
 		return;
 
 	is_assert = 0;
-	if (flag_has(_g_logger.flags_level, LOG_LEVEL_ASSERT)) {
+	if (flag_has(level, LOG_LEVEL_ASSERT)) {
 		is_assert = 1;
-		flag_rem(_g_logger.flags_level, LOG_LEVEL_ASSERT);
+		flag_rem(level, LOG_LEVEL_ASSERT);
 	}
 
 	// "[Level]" + [TODO: Colors]
@@ -137,7 +137,18 @@ linux_log(u32 level,
 			fb8_append_cstr(&_g_logger.cb, "===============\n", 0);
 		} break;
 
-		default: assert(0, "Must be a single level!");
+		default: {
+			fb8_append_cstr(&_g_logger.cb, "\033[31m", 0);
+			fb8_append_cstr(&_g_logger.cb, "==================\n", 0);
+			fb8_append_cstr(&_g_logger.cb, "= INTERNAL ERROR =\n", 0);
+			fb8_append_cstr(&_g_logger.cb, "==================\n", 0);
+			fb8_flush(&_g_logger.cb);
+
+			fb8_append_cstr(&_g_logger.cb, "\033[0m", 0);
+			fb8_append_cstr(&_g_logger.cb, "Must be a single level!\n", 0);
+			fb8_flush(&_g_logger.cb);
+			sys_exit(0);
+		}
 	}
 
 	fb8_flush(&_g_logger.cb);
@@ -173,7 +184,8 @@ linux_log(u32 level,
 
 	// "file(line_num): fnname"
 	if (is_assert) {
-		fb8_append_byte(&_g_logger.cb, '\n');
+		fb8_append(&_g_logger.cb, s8("Assert: True\n"));
+
 		fb8_append_cstr(&_g_logger.cb, file, 0);
 		fb8_append_byte(&_g_logger.cb, '(');
 		fb8_append_usz( &_g_logger.cb, linenum);
@@ -181,6 +193,10 @@ linux_log(u32 level,
 		fb8_append_byte(&_g_logger.cb, ':');
 		fb8_append_byte(&_g_logger.cb, ' ');
 		fb8_append_cstr(&_g_logger.cb, fnname, 0);
+		fb8_append_lf(&_g_logger.cb);
+		fb8_append_lf(&_g_logger.cb);
+
+		fb8_flush(&_g_logger.cb);
 	}
 }
 
@@ -198,11 +214,117 @@ linux_logc(u32 level,
 }
 
 local void
+linux_crash_print_registers(fb8 *fb, struct ucontext_t *ctx)
+{
+	greg_t *greg;
+	greg = ctx->uc_mcontext.gregs;
+	usz *rbp;
+	usz  rip;
+	int frame;
+
+	fb8_append(fb, s8("Register Values: "));
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rax: "));
+	fb8_append_hex(fb, greg[REG_RAX]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rbx: "));
+	fb8_append_hex(fb, greg[REG_RBX]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rcx: "));
+	fb8_append_hex(fb, greg[REG_RCX]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rdx: "));
+	fb8_append_hex(fb, greg[REG_RDX]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rsi: "));
+	fb8_append_hex(fb, greg[REG_RSI]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rdi: "));
+	fb8_append_hex(fb, greg[REG_RDI]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rsp: "));
+	fb8_append_hex(fb, greg[REG_RSP]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rbp: "));
+	fb8_append_hex(fb, greg[REG_RBP]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r8: "));
+	fb8_append_hex(fb, greg[REG_R8]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r9: "));
+	fb8_append_hex(fb, greg[REG_R9]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r10: "));
+	fb8_append_hex(fb, greg[REG_R10]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r11: "));
+	fb8_append_hex(fb, greg[REG_R11]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r12: "));
+	fb8_append_hex(fb, greg[REG_R12]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r13: "));
+	fb8_append_hex(fb, greg[REG_R13]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r14: "));
+	fb8_append_hex(fb, greg[REG_R14]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r15: "));
+	fb8_append_hex(fb, greg[REG_R15]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rip: "));
+	fb8_append_hex(fb, greg[REG_RIP]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rflags: "));
+	fb8_append_hex(fb, greg[REG_EFL]);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("Stack Frames:"));
+	fb8_append_lf(fb);
+	rbp = (usz *)greg[REG_RBP];
+	for (frame = 0; frame < 20; ++frame) {
+		if (!rbp)
+			break;
+
+		rip = *(rbp + 1);
+		rbp = (usz *)(*rbp);
+
+		if (rip == 0)
+			break;
+
+		fb8_append(fb, s8("\t- Frame ["));
+		fb8_append_isz(fb, frame);
+		fb8_append(fb, s8("]: "));
+		fb8_append_hex(fb, rip);
+		fb8_append_lf(fb);
+	}
+
+}
+
+local void
 linux_crash_handler(int signo,
                     siginfo_t *info,
                     void* context)
 {
-//	struct ucontext_t* ctx = (struct ucontext_t*)context;
+	struct ucontext_t* ctx;
 
 	fb8 fb = {0};
 	u8 buffer[KB(4)];
@@ -215,7 +337,8 @@ linux_crash_handler(int signo,
 	fb8_append_lf(&fb);
 	fb8_append_lf(&fb);
 
-//	win32_crash_print_registers(&fb, ctx);
+	ctx = (struct ucontext_t *)context;
+	linux_crash_print_registers(&fb, ctx);
 
 	fb8_append_lf(&fb);
 	fb8_append_lf(&fb);

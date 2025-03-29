@@ -58,7 +58,6 @@ main(int argc,
 	assert(app_init,   "Failed to get app_init from libapp.so");
 	assert(app_update, "Failed to get app_update from libapp.so");
 	assert(app_close,  "Failed to get app_close from libapp.so");
-
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
 	pd.os_write = fb8_write;

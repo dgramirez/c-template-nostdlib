@@ -10,13 +10,18 @@
 	#include <errno.h>
 	#include <signal.h>
 	#include <unistd.h>
+	#include <ucontext.h>
 #else
+#define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
+
 typedef void (*__sighandler_t) (int);
 
 typedef int   pid_t;
 typedef pid_t uid_t;
 typedef usz   clock_t;
-
+typedef int greg_t;
+typedef greg_t gregset_t[23];
+typedef struct _libc_fpstate *fpregset_t;
 
 struct timeval {
 	time_t tv_sec;
@@ -35,19 +40,63 @@ union sigval
 };
 typedef union sigval sigval_t;
 
-struct ucontext_t {
-    uint64_t uc_flags;
-    struct {
-        uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-        uint64_t rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip;
-    } regs;
-};
-
-#define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
 typedef struct
 {
   unsigned long int __val[_SIGSET_NWORDS];
 } sigset_t;
+
+struct fpxreg
+{
+	unsigned short int significand[4];
+	unsigned short int exponent;
+	unsigned short int reserved1[3];
+};
+
+struct xmmreg
+{
+	u32	element[4];
+};
+
+struct _libc_fpstate
+{
+	/* 64-bit FXSAVE format.  */
+	u16 cwd;
+	u16 swd;
+	u16 ftw;
+	u16 fop;
+	usz rip;
+	usz rdp;
+	u32 mxcsr;
+	u32 mxcr_mask;
+	struct fpxreg _st[8];
+	struct xmmreg _xmm[16];
+	u32 reserved1[24];
+};
+
+typedef struct
+{
+	gregset_t gregs;
+	/* Note that fpregs is a pointer.  */
+	fpregset_t fpregs;
+	unsigned long long __reserved1 [8];
+} mcontext_t;
+
+typedef struct sigaltstack {
+	void *ss_sp;
+	int ss_flags;
+	usz ss_size;
+} stack_t;
+
+typedef struct ucontext_t
+{
+	unsigned long int uc_flags;
+	struct ucontext_t *uc_link;
+	stack_t uc_stack;
+	mcontext_t uc_mcontext;
+	sigset_t uc_sigmask;
+	struct _libc_fpstate __fpregs_mem;
+	unsigned long long int __ssp[4];
+} ucontext_t;
 
 typedef struct
 {
@@ -579,6 +628,32 @@ struct sigaction_t {
 	void (*restorer_fn)(void);
 	sigset_t sa_mask;
 };
+
+typedef enum {
+	REG_R8 = 0,
+	REG_R9,
+	REG_R10,
+	REG_R11,
+	REG_R12,
+	REG_R13,
+	REG_R14,
+	REG_R15,
+	REG_RDI,
+	REG_RSI,
+	REG_RBP,
+	REG_RBX,
+	REG_RDX,
+	REG_RAX,
+	REG_RCX,
+	REG_RSP,
+	REG_RIP,
+	REG_EFL,
+	REG_CSGSFS,		/* Actually short cs, gs, fs, __pad0.  */
+	REG_ERR,
+	REG_TRAPNO,
+	REG_OLDMASK,
+	REG_CR2
+} GeneralRegisters;
 
 typedef struct {
 	b8     mb;

@@ -137,16 +137,19 @@
 #define logc_warn(msg)   logc(LOG_LEVEL_WARNING, msg)
 #define logc_error(msg)  logc(LOG_LEVEL_ERROR, msg)
 #define logc_fatal(msg)  logc(LOG_LEVEL_FATAL, msg)
-#define logc_assert(msg) logc(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
 
 #if defined(_DEBUG)
+	#define logc_assert(msg) logc(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
 	#define assert(x, s) if (!(x)) { \
-		usz *___killme = 0; \
-		*___killme = 0xDEADA55E; \
+		log_assert(s8(s));           \
+		usz *___killme = 0;          \
+		*___killme = 0xDEADA55E;     \
 	}
 #elif defined(_DEBUG_RELEASE)
+	#define logc_assert(msg) logc(LOG_LEVEL_ERROR | LOG_LEVEL_ASSERT, msg)
 	#define assert(x, s) if (!(x)) { log_assert(s8(s)); }
 #else
+	#define logc_assert(msg)  logc(LOG_LEVEL_ERROR, msg)
 	#define assert(x, s) ;
 #endif
 
