@@ -457,6 +457,38 @@ win32_crash_print_registers(fb8 *fb, PCONTEXT ctx)
 	fb8_append_hex(fb, ctx->Rbp);
 	fb8_append_lf(fb);
 
+	fb8_append(fb, s8("\t- r8: "));
+	fb8_append_hex(fb, ctx->R8);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r9: "));
+	fb8_append_hex(fb, ctx->R9);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r10: "));
+	fb8_append_hex(fb, ctx->R10);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r11: "));
+	fb8_append_hex(fb, ctx->R11);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r12: "));
+	fb8_append_hex(fb, ctx->R12);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r13: "));
+	fb8_append_hex(fb, ctx->R13);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r14: "));
+	fb8_append_hex(fb, ctx->R14);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- r15: "));
+	fb8_append_hex(fb, ctx->R15);
+	fb8_append_lf(fb);
+
 	fb8_append(fb, s8("\t- rip: "));
 	fb8_append_hex(fb, ctx->Rip);
 	fb8_append_lf(fb);

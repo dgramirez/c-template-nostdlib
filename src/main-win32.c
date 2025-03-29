@@ -50,7 +50,7 @@ Win32Main(int argc, s8 *argv)
 	app_close();
 
 	usz *___killme = 0;
-	*killme = 0xDEADA55E;
+	*___killme = 0xDEADA55E;
 
 	unref(argc);
 	unref(argv);
