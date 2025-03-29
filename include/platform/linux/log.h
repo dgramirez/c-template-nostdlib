@@ -48,7 +48,7 @@ linux_init_logger(MArena *arena,
 
 local void
 linux_log(u32 level,
-          const char *msg,
+          s8 msg,
           const char *file,
           usz linenum,
           const char *fnname)
@@ -164,6 +164,13 @@ linux_log(u32 level,
 	fb8_append_usz(&_g_logger.cb, lt.nsec);
 	fb8_append_byte(&_g_logger.cb, ']');
 
+	fb8_append_lf(&_g_logger.cb);
+	fb8_append(&_g_logger.cb, msg);
+	fb8_append_lf(&_g_logger.cb);
+	fb8_append_lf(&_g_logger.cb);
+
+	fb8_flush(&_g_logger.cb);
+
 	// "file(line_num): fnname"
 	if (is_assert) {
 		fb8_append_byte(&_g_logger.cb, '\n');
@@ -175,13 +182,19 @@ linux_log(u32 level,
 		fb8_append_byte(&_g_logger.cb, ' ');
 		fb8_append_cstr(&_g_logger.cb, fnname, 0);
 	}
+}
 
-	fb8_append_lf(&_g_logger.cb);
-	fb8_append_cstr(&_g_logger.cb, msg, 0);
-
-	fb8_append_lf(&_g_logger.cb);
-	fb8_append_lf(&_g_logger.cb);
-	fb8_flush(&_g_logger.cb);
+local void
+linux_logc(u32 level,
+           const char *msg,
+           const char *file,
+           usz linenum,
+           const char *fnname)
+{
+	s8 s_msg;
+	s_msg.data    = (u8 *)msg;
+	s_msg.len     = c_strlen(msg);
+	linux_log(level, s_msg, file, linenum, fnname);
 }
 
 local void
@@ -190,7 +203,26 @@ linux_crash_handler(int signo,
                     void* context)
 {
 //	struct ucontext_t* ctx = (struct ucontext_t*)context;
-	log_fatal("A Crash Has Occurred!\n");
+
+	fb8 fb = {0};
+	u8 buffer[KB(4)];
+
+	fb.data = buffer;
+	fb.cap  = KB(4);
+	fb.fd   = 0;
+
+	fb8_append(&fb, s8("A Crash Has Ocurred!"));
+	fb8_append_lf(&fb);
+	fb8_append_lf(&fb);
+
+//	win32_crash_print_registers(&fb, ctx);
+
+	fb8_append_lf(&fb);
+	fb8_append_lf(&fb);
+	fb8_append(&fb, s8("TODO: Create xxd of All Mapped Memory. Then "));
+	fb8_append(&fb, s8("Compress it, Then write crash info to file(s)"));
+
+	log_fatal(fb.b);
 	sys_exit(0);
 }
  

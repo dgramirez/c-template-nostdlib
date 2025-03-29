@@ -10,7 +10,8 @@ main(int argc,
 	void *buffer;
 
 	os_write = fb8_write;
-	logsys = linux_log;
+	logsz = linux_logc;
+	logs8 = linux_log;
 
 	buffer = mmap_anon(MB(128));
 	marena_init(&sysmem, buffer, MB(128), page_size);
@@ -64,7 +65,7 @@ main(int argc,
 	pd.get_cpu_vendor = linux_cpuid_getvendor;
 	pd.std_out = 0;
 	pd.run_app = 1;
-	pd.logsys  = logsys;
+	pd.logsz  = logsz;
 
 	app_init(&pd);
 	rest.tv_sec = 1;
@@ -74,6 +75,7 @@ main(int argc,
 	}
 	app_close();
 
+	*((volatile int*)0xD3D) = 0;
 	return 0;
 }
 

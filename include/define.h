@@ -1,13 +1,22 @@
 #ifndef INCLUDE_DEFINE_H
 #define INCLUDE_DEFINE_H
 
+//////////////////////////////
+// Above All: No Reference! //
+//////////////////////////////
+#define unref(x) (void)sizeof(x)
+
+////////////////////
+// Static Contexts//
+////////////////////
 #define local  static
 #define global static
 #define sticky static
 #define external
 
-#define unref(x) (void)sizeof(x)
-
+/////////////////////////
+// Byte Groups & Flags //
+/////////////////////////
 #define KB(x) ((x) << 10)
 #define MB(x) ((x) << 20)
 #define GB(x) ((x) << 30)
@@ -19,6 +28,27 @@
 #define flag_has(x, flag) ((x) & (flag))
 #define flag_all(x, flag) ((x) & (flag) == (flag))
 
+#define page_size KB(4)
+
+////////////////////////////
+// Architecture Detection //
+////////////////////////////
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	#define EXE_ARCH 32
+#endif
+#if defined(__x86_64__) || defined(_M_X64)
+	#define EXE_ARCH 64
+#endif
+
+#if defined(_WIN32)
+	#define export __declspec(dllexport)
+#else
+	#define export
+#endif
+
+//////////////
+// Bit Math //
+//////////////
 #define minmax_bits(x, y) (((x) ^ (y)) & -((x) < (y)))
 #define imin(x, y) ((y) ^ minmax_bits((x), (y)))
 #define imax(x, y) ((x) ^ minmax_bits((x), (y)))
@@ -26,6 +56,12 @@
 
 #define isinf(x) (((x) & 0x7FF0000000000000) == 0x7FF0000000000000)
 #define isnan(x) (((x) & 0x7FFFFFFFFFFFFFFF)  > 0x7FF0000000000000)
+
+#define is_pow2(x) ((x) && !((x) & ((x) - 1)))
+#define align_addr(p, a) ((usz)(p) & -(a))
+#define align_next(p, a) ((a) + align_addr(p, a))
+#define align_over(p, a) ((usz)(p) & ((a) - 1))
+#define align_pad(p, a)  (((a) - align_over(p, a)) & ((a) - 1))
 
 #define swap(x, y)  \
 		(x) ^= (y); \
@@ -36,27 +72,9 @@
 		swap(x, y)      \
 	}
 
-#define cntof(x) (unsigned int)(sizeof(x) / sizeof(*(x))
-#define lenof(x) (cntof(x) - 1)
-
-#define is_pow2(x) ((x) && !((x) & ((x) - 1)))
-#define align_addr(p, a) ((usz)(p) & -(a))
-#define align_next(p, a) ((a) + align_addr(p, a))
-#define align_over(p, a) ((usz)(p) & ((a) - 1))
-#define align_pad(p, a)  (((a) - align_over(p, a)) & ((a) - 1))
-
-#define page_size KB(4)
-
-#if defined(_DEBUG)
-	#define assert(x, s) if (!(x)) { \
-		*((volatile int*)0xD3D) = 0; \
-	}
-#elif defined(_DEBUG_RELEASE)
-	#define assert(x, s) if (!(x)) { log_assert(s); }
-#else
-	#define assert(x, s) ;
-#endif
-
+/////////////////////////////////////////
+// Function Types & Function Variables //
+/////////////////////////////////////////
 #define declfn(rtype, name, rcode, ...) \
 	typedef rtype (*PFN_##name)(__VA_ARGS__); \
 	local rtype stub_##name(__VA_ARGS__) {rcode} \
@@ -74,17 +92,61 @@
 #define deffn_dll(dll, name) \
 	name = (PFN_##name)GetProcAddress(dll, #name)
 
-#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
-	#define EXE_ARCH 32
-#endif
-#if defined(__x86_64__) || defined(_M_X64)
-	#define EXE_ARCH 64
-#endif
 
-#if defined(_WIN32)
-	#define export __declspec(dllexport)
+/////////////////////////////////////
+// Counted Strings, Logs & Asserts //
+/////////////////////////////////////
+#define s8_cntof(x) ((usz)(sizeof(x) / sizeof(*(x))))
+#define s8_lenof(x) (s8_cntof(x) - 1)
+#define s8(x)   ((s8){(u8*)x, s8_lenof(x)})
+#define sb8(x) ((sb8){(u8 *)x, s8_lenof(x), s8_lenof(x)})
+
+#define LOG_LEVEL_GOOFY    0x01
+#define LOG_LEVEL_DEBUG    0x02
+#define LOG_LEVEL_INFO     0x04
+#define LOG_LEVEL_SUCCESS  0x08
+#define LOG_LEVEL_ANOMALLY 0x10
+#define LOG_LEVEL_WARNING  0x20
+#define LOG_LEVEL_ERROR    0x40
+#define LOG_LEVEL_FATAL    0x80
+#define LOG_LEVEL_CRASH    0x4000
+#define LOG_LEVEL_ASSERT   0x8000
+
+#define LOG_FORMAT_CONSOLE 0x1
+#define LOG_FORMAT_FILE    0x2
+#define LOG_FORMAT_FILE_7Z 0x4
+#define LOG_FORMAT_NETWORK 0x8
+
+#define log(level, msg) logs8(level, msg, __FILE__, __LINE__, __func__)
+#define log_egg(msg)    log(LOG_LEVEL_GOOFY, msg)
+#define log_debug(msg)  log(LOG_LEVEL_DEBUG, msg)
+#define log_info(msg)   log(LOG_LEVEL_INFO, msg)
+#define log_pass(msg)   log(LOG_LEVEL_SUCCESS, msg)
+#define log_odd(msg)    log(LOG_LEVEL_ANOMALLY, msg)
+#define log_warn(msg)   log(LOG_LEVEL_WARNING, msg)
+#define log_error(msg)  log(LOG_LEVEL_ERROR, msg)
+#define log_fatal(msg)  log(LOG_LEVEL_FATAL, msg)
+#define log_assert(msg) log(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
+
+#define logc(level, msg) logsz(level, msg, __FILE__, __LINE__, __func__)
+#define logc_egg(msg)    logc(LOG_LEVEL_GOOFY, msg)
+#define logc_debug(msg)  logc(LOG_LEVEL_DEBUG, msg)
+#define logc_info(msg)   logc(LOG_LEVEL_INFO, msg)
+#define logc_pass(msg)   logc(LOG_LEVEL_SUCCESS, msg)
+#define logc_odd(msg)    logc(LOG_LEVEL_ANOMALLY, msg)
+#define logc_warn(msg)   logc(LOG_LEVEL_WARNING, msg)
+#define logc_error(msg)  logc(LOG_LEVEL_ERROR, msg)
+#define logc_fatal(msg)  logc(LOG_LEVEL_FATAL, msg)
+#define logc_assert(msg) logc(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
+
+#if defined(_DEBUG)
+	#define assert(x, s) if (!(x)) { \
+		*((volatile int*)0xD3D) = 0; \
+	}
+#elif defined(_DEBUG_RELEASE)
+	#define assert(x, s) if (!(x)) { log_assert(s8(s)); }
 #else
-	#define export
+	#define assert(x, s) ;
 #endif
 
 #endif // INCLUDE_DEFINE_H

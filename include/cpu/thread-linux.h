@@ -1,10 +1,6 @@
 #ifndef INCLUDE_CPU_THREAD_H
 #define INCLUDE_CPU_THREAD_H
 
-#include "define.h"
-#include "platform.h"
-#include "linux.h"
-
 typedef void (*FnEntry)(void *);
 typedef struct __attribute((aligned(16))) stack_head {
 	void (*entry)(struct stack_head *);

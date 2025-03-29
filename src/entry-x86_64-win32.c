@@ -1,5 +1,3 @@
-#include "mem/s8.h"
-#include "mem/memfn.h"
 #include "main-win32.c"
 
 void

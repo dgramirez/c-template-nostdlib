@@ -1,10 +1,6 @@
 #ifndef INCLUDE_MEM_ARENA_H
 #define INCLUDE_MEM_ARENA_H
 
-#include "define.h"
-#include "platform.h"
-#include "memfn.h"
-
 typedef struct {
 	u8 *start;
 	u8 *end;

@@ -1,9 +1,6 @@
 #ifndef INCLUDE_MEM_MEMFN_H
 #define INCLUDE_MEM_MEMFN_H
 
-#include "define.h"
-#include "platform.h"
-
 // NOTE [Optimization]: Despite trying to utilize IPC, There are potential
 //                      optimizations that can be employed. This note does
 //                      not include SSE and multi-threading as they will be

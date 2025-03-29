@@ -1,9 +1,6 @@
 #ifndef INCLUDE_MEM_POOL_H
 #define INCLUDE_MEM_POOL_H
 
-#include "define.h"
-#include "platform.h"
-
 typedef struct __mpool_node {
 	struct __mpool_node *next;
 } MPoolNode;

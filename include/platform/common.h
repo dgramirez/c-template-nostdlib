@@ -3,10 +3,10 @@
 
 #include "define.h"
 #include "platform.h"
+#include "type.h"
 #include "mem.h"
 #include "cpu.h"
 
-#include "platform/common/log.h"
 #include "platform/common/par.h"
 
 #endif // INCLUDE_PLATFORM_COMMON_H

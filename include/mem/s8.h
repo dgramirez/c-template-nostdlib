@@ -1,49 +1,6 @@
 #ifndef INCLUDE_S8_H
 #define INCLUDE_S8_H
-
-#include "define.h"
-#include "platform.h"
-#include "memfn.h"
-#include "platform/common/log.h"
-
-#define s8_cntof(x) (usz)(sizeof(x) / sizeof(*(x)))
-#define s8_lenof(x) (s8_cntof(x) - 1)
-#define s8(x)   (s8){(u8*)x, s8_lenof(x)}
-#define sb8(x) (sb8){(u8 *)x, s8_lenof(x), s8_lenof(x)}
-
-typedef struct {
-	u8 *data;
-	usz len;
-} s8, b8;
-
-typedef struct {
-	union {
-		b8 b;
-		struct { u8 *data; usz len; };
-	};
-
-	usz cap;
-} sb8, mb8;
-
-typedef struct {
-	union {
-		mb8 mb;
-		struct {
-			union {
-				b8 b;
-				struct { u8 *data; usz len; };
-			};
-			usz cap;
-		};
-	};
-
-	void *fd;
-	usz err;
-} fb8;
-
-typedef i32 (*pfn_os_write)(fb8 *b);
-local i32 stub_os_write(fb8 *b) {unref(b); return -1;}
-pfn_os_write os_write = stub_os_write;
+// NOTE: #include "type.h" for s8 types
 
 //////////
 // cstr //
@@ -141,8 +98,6 @@ mb8_cpy(mb8 *dst,
 	usz max_len;
 
 	max_len = imin(src.len, dst->cap);
-	assert(max_len == src.len, "dst would of overflowed!");
-
 	memcpyu(dst->data, src.data, max_len);
 	dst->len = max_len;
 }
@@ -154,8 +109,6 @@ mb8_cat(mb8 *dst,
 	usz max_len;
 
 	max_len = imin(src.len, dst->cap - dst->len);
-	assert(max_len == src.len, "dst would of overflowed!");
-
 	memcpyu(dst->data + dst->len, src.data, max_len);
 	dst->len += max_len;
 }
@@ -167,8 +120,6 @@ mb8_move(mb8 *dst,
 	usz max_len;
 
 	max_len = imin(src.len, dst->cap);
-	assert(max_len == src.len, "dst would of overflowed!");
-
 	memmoveu(dst->data, src.data, max_len);
 	dst->len = max_len;
 }

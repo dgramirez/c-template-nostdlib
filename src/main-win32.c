@@ -10,7 +10,8 @@ Win32Main(int argc, s8 *argv)
 	SetUnhandledExceptionFilter(win32_crash_handler);
 
 	os_write = Win32WriteFile;
-	logsys = win32_log;
+	logsz = win32_logc;
+	logs8 = win32_log;
 
 	HANDLE lib = LoadLibraryA("libapp.dll");
 	assert(lib, "Failed to load library: libapp.dll");
@@ -30,7 +31,7 @@ Win32Main(int argc, s8 *argv)
 	marena_init(&sysmem, buffer, MB(128), page_size);
 
 	win32_init_logger(&sysmem, 0xFF, 0xF);
-	log_debug("Test!");
+	log_debug(s8("Test!"));
 
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
@@ -38,7 +39,8 @@ Win32Main(int argc, s8 *argv)
 	pd.get_cpu_vendor = Win32CpuidGetVendor;
 	pd.std_out = (void*)GetStdHandle(STD_OUTPUT_HANDLE);
 	pd.run_app = 1;
-	pd.logsys = win32_log;
+	pd.logsz = win32_logc;
+	pd.logs8 = win32_log;
 
 	app_init(&pd);
 	while(pd.run_app) {

@@ -48,7 +48,7 @@ win32_init_logger(MArena *arena,
 
 local void
 win32_log(u32 level,
-          const char *msg,
+          s8 msg,
           const char *file,
           usz linenum,
           const char *fnname)
@@ -87,48 +87,59 @@ win32_log(u32 level,
 	// "[Level]" + [TODO: Colors]
 	switch(level) {
 		case LOG_LEVEL_GOOFY: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED | FOREGROUND_BLUE |FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED |
+			                                         FOREGROUND_BLUE |
+			                                         FOREGROUND_GREEN |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "==============\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= EASTER EGG =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "==============\n", 0);
 		} break;
 		case LOG_LEVEL_DEBUG: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_BLUE |
+			                                         FOREGROUND_GREEN |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "=========\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= DEBUG =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "=========\n", 0);
 		} break;
 
 		case LOG_LEVEL_INFO: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_BLUE |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "========\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= INFO =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "========\n", 0);
 		} break;
 
 		case LOG_LEVEL_SUCCESS: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_GREEN |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "===========\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= SUCCESS =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "===========\n", 0);
 		} break;
 
 		case LOG_LEVEL_ANOMALLY: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED | FOREGROUND_BLUE);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED |
+			                                         FOREGROUND_BLUE);
 			fb8_append_cstr(&_g_logger.cb, "============\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= ANOMALLY =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "============\n", 0);
 		} break;
 
 		case LOG_LEVEL_WARNING: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED |
+			                                         FOREGROUND_GREEN |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "===========\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= WARNING =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "===========\n", 0);
 		} break;
 
 		case LOG_LEVEL_ERROR: {
-			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED | FOREGROUND_INTENSITY);
+			SetConsoleTextAttribute(_g_logger.cb.fd, FOREGROUND_RED |
+			                                         FOREGROUND_INTENSITY);
 			fb8_append_cstr(&_g_logger.cb, "=========\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "= ERROR =\n", 0);
 			fb8_append_cstr(&_g_logger.cb, "=========\n", 0);
@@ -169,8 +180,16 @@ win32_log(u32 level,
 	#endif
 	fb8_append_byte(&_g_logger.cb, ']');
 
+	fb8_append_lf(&_g_logger.cb);
+	fb8_append(&_g_logger.cb, msg);
+
+	fb8_append_lf(&_g_logger.cb);
+	fb8_append_lf(&_g_logger.cb);
+	fb8_flush(&_g_logger.cb);
+
 	// "file(line_num): fnname"
 	if (is_assert) {
+		fb8_append(&_g_logger.cb, s8("Assert: True\n"));
 		fb8_append_byte(&_g_logger.cb, '\n');
 		fb8_append_cstr(&_g_logger.cb, file, 0);
 		fb8_append_byte(&_g_logger.cb, '(');
@@ -179,14 +198,21 @@ win32_log(u32 level,
 		fb8_append_byte(&_g_logger.cb, ':');
 		fb8_append_byte(&_g_logger.cb, ' ');
 		fb8_append_cstr(&_g_logger.cb, fnname, 0);
+		fb8_flush(&_g_logger.cb);
 	}
+}
 
-	fb8_append_lf(&_g_logger.cb);
-	fb8_append_cstr(&_g_logger.cb, msg, 0);
-
-	fb8_append_lf(&_g_logger.cb);
-	fb8_append_lf(&_g_logger.cb);
-	fb8_flush(&_g_logger.cb);
+local void
+win32_logc(u32 level,
+           const char *msg,
+           const char *file,
+           usz linenum,
+           const char *fnname)
+{
+	s8 s_msg;
+	s_msg.data    = (u8 *)msg;
+	s_msg.len     = c_strlen(msg);
+	win32_log(level, s_msg, file, linenum, fnname);
 }
 
 #ifdef _MSC_VER
@@ -267,6 +293,7 @@ IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used = {
 	__safe_se_handler_table,
 	(DWORD)(DWORD_PTR)&__safe_se_handler_count
 };
+
 #else
 declfn_type(EXCEPTION_DISPOSITION,
             Win32_SEH,
@@ -293,16 +320,192 @@ __C_specific_handler(struct _EXCEPTION_RECORD *ExceptionRecord,
 	          ContextRecord,
 	          DispatcherContext);
 }
+
 #endif // EXE_ARCH == 32
 #else
 #endif // _MSC_VER
 
-LONG WINAPI
-win32_crash_handler(EXCEPTION_POINTERS *ExceptionInfo)
+#if EXE_ARCH == 32
+local void
+win32_crash_print_registers(fb8 *fb, PCONTEXT ctx)
 {
-	unref(ExceptionInfo);
+	DWORD *ebp;
+	DWORD eip;
+	int frame;
 
-	log_fatal("A Crash Has Occurred!\n");
+	fb8_append(fb, s8("Register Values: "));
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- eax: "));
+	fb8_append_hex(fb, ctx->Eax);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- ebx: "));
+	fb8_append_hex(fb, ctx->Ebx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- ecx: "));
+	fb8_append_hex(fb, ctx->Ecx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- edx: "));
+	fb8_append_hex(fb, ctx->Edx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- esi: "));
+	fb8_append_hex(fb, ctx->Esi);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- edi: "));
+	fb8_append_hex(fb, ctx->Edi);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- esp: "));
+	fb8_append_hex(fb, ctx->Esp);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- ebp: "));
+	fb8_append_hex(fb, ctx->Ebp);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- eip: "));
+	fb8_append_hex(fb, ctx->Eip);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- eflags: "));
+	fb8_append_hex(fb, ctx->EFlags);
+	fb8_append_lf(fb);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("Stack Frames:"));
+	fb8_append_lf(fb);
+	ebp = (DWORD *)ctx->Ebp;
+	for (frame = 0; frame < 20; ++frame) {
+		if (!ebp || IsBadReadPtr(ebp, sizeof(DWORD) * 2))
+			break;
+
+		eip = *(ebp + 1);
+		ebp = (DWORD *)(*ebp);
+
+		if (eip == 0 || IsBadCodePtr((FARPROC)eip))
+			break;
+
+		fb8_append(fb, s8("\t- Frame ["));
+		fb8_append_isz(fb, frame);
+		fb8_append(fb, s8("]: "));
+		fb8_append_hex(fb, eip);
+		fb8_append_lf(fb);
+	}
+}
+#else
+local void
+win32_crash_print_registers(fb8 *fb, PCONTEXT ctx)
+{
+	PRUNTIME_FUNCTION pfn;
+	PVOID HandlerData;
+	DWORD64 ImageBase;
+	DWORD64 EstablisherFrame;
+	PEXCEPTION_ROUTINE r;
+	int i;
+
+	fb8_append(fb, s8("Register Values: "));
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rax: "));
+	fb8_append_hex(fb, ctx->Rax);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rbx: "));
+	fb8_append_hex(fb, ctx->Rbx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rcx: "));
+	fb8_append_hex(fb, ctx->Rcx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rdx: "));
+	fb8_append_hex(fb, ctx->Rdx);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rsi: "));
+	fb8_append_hex(fb, ctx->Rsi);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rdi: "));
+	fb8_append_hex(fb, ctx->Rdi);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rsp: "));
+	fb8_append_hex(fb, ctx->Rsp);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rbp: "));
+	fb8_append_hex(fb, ctx->Rbp);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rip: "));
+	fb8_append_hex(fb, ctx->Rip);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("\t- rflags: "));
+	fb8_append_hex(fb, ctx->EFlags);
+	fb8_append_lf(fb);
+
+	fb8_append(fb, s8("Stack Walk: "));
+	fb8_append_hex(fb, ctx->Rip);
+	fb8_append_lf(fb);
+
+	for (i = 0; i < 20; ++i) {
+		pfn = RtlLookupFunctionEntry(ctx->Rip, &ImageBase, 0);
+		if (!pfn) {
+			fb8_append(fb, s8("\t- No unwind info found for RIP:"));
+			fb8_append_hex(fb, ctx->Rip);
+			break;
+		}
+
+		fb8_append(fb, s8("\t- Stack ["));
+		fb8_append_isz(fb, i);
+		fb8_append(fb, s8("]: "));
+		fb8_append_hex(fb, ctx->Rip);
+
+		r = RtlVirtualUnwind(UNW_FLAG_NHANDLER,
+		                     ImageBase,
+		                     ctx->Rip,
+		                     pfn,
+		                     ctx,
+		                     &HandlerData,
+		                     &EstablisherFrame,
+		                     0);
+
+		if (r == 0x0 || ctx->Rip == 0x0)
+			break;
+	}
+}
+#endif // EXE_ARCH == 32
+
+local LONG WINAPI
+win32_crash_handler(PEXCEPTION_POINTERS ExceptionInfo)
+{
+	CONTEXT *ctx = ExceptionInfo->ContextRecord;
+
+	fb8 fb;
+	u8 buffer[KB(4)];
+
+	fb.data = buffer;
+	fb.cap  = KB(4);
+
+	fb8_append(&fb, s8("A Crash Has Ocurred!"));
+	fb8_append_lf(&fb);
+	fb8_append_lf(&fb);
+
+	win32_crash_print_registers(&fb, ctx);
+
+	fb8_append_lf(&fb);
+	fb8_append_lf(&fb);
+	fb8_append(&fb, s8("TODO: Create xxd of All Mapped Memory. Then "));
+	fb8_append(&fb, s8("Compress it, Then write crash info to file(s)"));
+
+	log_fatal(fb.b);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 

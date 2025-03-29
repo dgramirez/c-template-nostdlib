@@ -1,8 +1,6 @@
 #ifndef INCLUDE_ASM_CPUID_H
 #define INCLUDE_ASM_CPUID_H
 
-#include "platform.h"
-
 extern void
 cpuid_native(unsigned int *eax,
              unsigned int *ebx,

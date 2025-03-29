@@ -1,6 +1,4 @@
-#include "define.h"
-#include "platform.h"
-#include "platform/common.h"
+#include "nostd_shared.h"
 
 global PlatformData *g_platform;
 
@@ -17,7 +15,8 @@ app_init(PlatformData *pd)
 {
 	g_platform = pd;
 	os_write   = g_platform->os_write;
-	logsys     = g_platform->logsys;
+	logsz      = g_platform->logsz;
+	logs8      = g_platform->logs8;
 
 	// Returning a positive or negative number acts as an error value.
 	return 0;
@@ -150,23 +149,23 @@ app_update()
 	fb8_append_lf(&fb);
 	fb8_flush(&fb);
 
-	log_debug("Debug: I am debugging the log defines.");
-	log_info("We're inside libapp.c. "
-			 "This is the application portion of this project!");
-	log_pass("And so far, log_debug and log_info has passed!");
-	log_odd("However, its kinda weird that I'm logging at different "
-			"levels. Of course its a test but you don't do this normally.");
-	log_warn("So a warning: We will see two errors occur. "
-		     "Only here, would the errors not truly matter!");
-	log_error("I'm an error, but not the one that would force a close on "
-	          "your application.");
-	log_fatal("I'm the fatal error. By myself, I am like the regular "
-			 "log_error. However, Devs should terminate the program once "
-			 "I have been used! In the end, its totally up to them.");
-	log_egg("And I'm an Easter Egg! or Dev Notes... Or whatever they want "
-		    "me to be. If I am supposed to be useful, I should be in "
-			"log_info. This is just meant for cool or fun info the devs "
-			"want to show out.");
+	logc_debug("Debug: I am debugging the log defines.");
+	logc_info("We're inside libapp.c. "
+	          "This is the application portion of this project!");
+	logc_pass("And so far, log_debug and log_info has passed!");
+	logc_odd("However, its kinda weird that I'm logging at different "
+	         "levels. Of course its a test but you don't do this normally.");
+	logc_warn("So a warning: We will see two errors occur. "
+	          "Only here, would the errors not truly matter!");
+	logc_error("I'm an error, but not the one that would force a close on "
+	           "your application.");
+	logc_fatal("I'm the fatal error. By myself, I am like the regular "
+	           "logc_error. However, Devs should terminate the program once "
+	           "I have been used! In the end, its totally up to them.");
+	logc_egg("And I'm an Easter Egg! or Dev Notes... Or whatever they want "
+	         "me to be. If I am supposed to be useful, I should be in "
+	         "logc_info. This is just meant for cool or fun info the devs "
+	         "want to show out.");
 
 	// Finish with the application (Not doing this will have the app run
 	// Continually, which may be ideal for a simple protocol client.)

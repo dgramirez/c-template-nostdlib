@@ -49,13 +49,5 @@ typedef size_t   usz;
 typedef float  f32;
 typedef double f64;
 
-typedef union {
-	void *pv;
-	u8   *pu8;
-	u16  *pu16;
-	u32  *pu32;
-	usz  *pusz;
-} MemUnion;
-
 #endif // INCLUDE_PLATFORM_H
 
