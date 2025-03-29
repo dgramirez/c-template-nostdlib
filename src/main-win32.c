@@ -49,7 +49,8 @@ Win32Main(int argc, s8 *argv)
 	}
 	app_close();
 
-	*((volatile int*)0xD3D) = 0;
+	usz *___killme = 0;
+	*killme = 0xDEADA55E;
 
 	unref(argc);
 	unref(argv);

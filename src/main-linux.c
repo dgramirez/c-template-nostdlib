@@ -75,7 +75,9 @@ main(int argc,
 	}
 	app_close();
 
-	*((volatile int*)0xD3D) = 0;
+	usz *_killme = 0;
+	*_killme = 0xDEADA55E;
+
 	return 0;
 }
 

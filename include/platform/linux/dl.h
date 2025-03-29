@@ -276,12 +276,12 @@ _dl_setup_phdr_and_loads(Dso *lib,
 			                      (page_size - 1),
 			                       page_size);
 
-			mapped = sys_mmap(lib_base + load_min,
-			                  load_max - load_min,
-			                  prot,
-			                  MAP_PRIVATE | MAP_FIXED,
-			                  fd,
-			                  load_off);
+			mapped = sys_mmap((u8*)lib_base + load_min,
+			                       load_max - load_min,
+			                       prot,
+			                       MAP_PRIVATE | MAP_FIXED,
+			                       fd,
+			                       load_off);
 
 			if (IS_SYSCALL_ERR(mapped)) {
 				marena_load(&temp);
@@ -289,7 +289,7 @@ _dl_setup_phdr_and_loads(Dso *lib,
 			}
 
 			if (phdr->p_memsz > phdr->p_filesz) {
-				memzerou(lib_base + phdr->p_vaddr + phdr->p_filesz,
+				memzerou((u8*)lib_base + phdr->p_vaddr + phdr->p_filesz,
 						(phdr->p_memsz - phdr->p_filesz) & (page_size - 1));
 			}
 		}
@@ -298,11 +298,11 @@ _dl_setup_phdr_and_loads(Dso *lib,
 	}
 
 	if (phdr_tls) {
-		memzerou(lib_base + phdr_tls->p_vaddr + phdr_tls->p_filesz,
+		memzerou((u8*)lib_base + phdr_tls->p_vaddr + phdr_tls->p_filesz,
 		         (phdr_tls->p_memsz - phdr_tls->p_filesz) & (page_size - 1));
 	}
 
-	lib->dyn = (Elf64_Dyn *)(lib_base + (isz)lib->dyn);
+	lib->dyn = (Elf64_Dyn *)((u8*)lib_base + (isz)lib->dyn);
 	marena_load(&temp);
 	return 0;
 }

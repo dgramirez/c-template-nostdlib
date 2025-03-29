@@ -141,7 +141,8 @@
 
 #if defined(_DEBUG)
 	#define assert(x, s) if (!(x)) { \
-		*((volatile int*)0xD3D) = 0; \
+		usz *___killme = 0; \
+		*___killme = 0xDEADA55E; \
 	}
 #elif defined(_DEBUG_RELEASE)
 	#define assert(x, s) if (!(x)) { log_assert(s8(s)); }
