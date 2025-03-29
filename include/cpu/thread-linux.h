@@ -2,7 +2,8 @@
 #define INCLUDE_CPU_THREAD_H
 
 typedef void (*FnEntry)(void *);
-typedef struct __attribute((aligned(16))) stack_head {
+//typedef struct __attribute((aligned(16))) stack_head {
+typedef struct stack_head {
 	void (*entry)(struct stack_head *);
 
 	// Thread Local Data
@@ -27,7 +28,7 @@ local void
 thread_entry(struct stack_head *h)
 {
 	h->fn_entry(h->args);
-	__atomic_store_n(&h->join_futex, 1, __ATOMIC_SEQ_CST);
+	atomic_store(&h->join_futex, 1);
 	futex_wake(&h->join_futex);
 	sys_exit(0);
 }

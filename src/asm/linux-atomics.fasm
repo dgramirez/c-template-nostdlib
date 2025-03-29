@@ -1,0 +1,79 @@
+; void atomic_store(void *ptr, isz val)
+public atomic_store
+atomic_store:
+	mov [rdi], rsi
+	sfence
+	ret
+
+; isz atomic_add(void *ptr, isz val)
+public atomic_xadd
+atomic_xadd:
+	; Fetch And Add
+	mov rax, rsi
+	lock xadd [rdi], rax
+	ret
+
+; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
+public atomic_cmpxchg
+atomic_cmpxchg:
+	; Compare and Swap
+	mov rax, rsi
+	lock cmpxchg [rdi], rdx
+	ret
+
+; isz atomic_xchg64(void *ptr, isz val)
+public atomic_xchg64
+atomic_xchg64:
+	; Swap
+	mov rax, rsi
+	lock xchg [rdi], rax
+	ret
+
+; void atomic_inc(void *ptr)
+public atomic_inc
+atomic_inc:
+	; Add and Fetch
+	lock add [rdi], WORD 1
+	ret
+
+; void atomic_dec(void *ptr)
+public atomic_dec
+atomic_dec:
+	; Add and Fetch
+	lock add [rdi], WORD -1
+	ret
+
+; void atomic_add(void *ptr, void *val)
+public atomic_add
+atomic_add:
+	; Add and Fetch
+	lock add [rdi], rsi
+	ret
+
+; void atomic_bit_set(void *ptr, void *val)
+public atomic_bit_set
+atomic_bit_set:
+	; Or and Fetch
+	lock or [rdi], rsi
+	ret
+
+; void atomic_bit_clear(void *ptr, void *val)
+public atomic_bit_clear
+atomic_bit_clear:
+	; And and Fetch
+	not rsi
+	lock and [rdi], rsi
+	ret
+
+; void memory_barrier()
+public mem_barrier
+mem_barrier:
+	mfence
+	ret
+
+; void cpu_relax()
+public cpu_relax
+cpu_relax:
+	pause
+	ret
+

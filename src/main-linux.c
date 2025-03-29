@@ -1,5 +1,11 @@
 #include "main-linux.h"
 
+local void
+mmm_sleep(void *arg)
+{
+	sys_nanosleep((struct timespec *)arg, 0);
+}
+
 int
 main(int argc,
      char **argv)
@@ -19,18 +25,13 @@ main(int argc,
 	linux_init_logger(&sysmem, 0xFF, 0xF);
 	linux_setup_crash_handler();
 	// TODO: Turn this entire section into a threadpool!
-//	StackHead *sh = (StackHead *)((u8 *)mmap_anon(KB(4)) + KB(4) - sizeof(StackHead));
-//	struct timespec ts;
-//	ts.tv_sec = 3;
-//	create_thread(sh, mmm_sleep, &ts);
-//
-//	s8 hs = s8("Waiting for nanosleep futex. . .");
-//	fb8_append(&hw2, hs);
-//	fb8_append_lf(&hw2);
-//	fb8_append_lf(&hw2);
-//	fb8_flush(&hw2);
-//
-//	futex_wait(&sh->join_futex);
+	StackHead *sh = (StackHead *)((u8 *)mmap_anon(KB(4)) + KB(4) - sizeof(StackHead));
+	struct timespec ts;
+	ts.tv_sec = 3;
+	create_thread(sh, mmm_sleep, &ts);
+
+	logc_info("Waiting for nanosleep futex. . .");
+	futex_wait(&sh->join_futex);
 	// --- SECTION--------------------------------------
 #ifndef USING_LIBC
 	assert(0, "Shouldn't really pass until custom dl is completed. . .");
