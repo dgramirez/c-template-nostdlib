@@ -5,9 +5,9 @@
 #include "platform.h"
 #include "type.h"
 #include "mem.h"
-#include "cpu.h"
 
 #include "platform/common/par.h"
+#include "platform/common/cpuid.h"
 
 #endif // INCLUDE_PLATFORM_COMMON_H
 

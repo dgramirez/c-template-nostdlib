@@ -5,6 +5,13 @@ atomic_store:
 	sfence
 	ret
 
+; isz atomic_store(void *ptr)
+public atomic_load
+atomic_load:
+	lfence
+	mov rax, [rdi]
+	ret
+
 ; isz atomic_add(void *ptr, isz val)
 public atomic_xadd
 atomic_xadd:

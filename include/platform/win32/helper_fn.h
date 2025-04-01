@@ -135,5 +135,13 @@ Win32CpuidGetVendor(u8 *buffer,
 	return b;
 }
 
+// Note: THIS ISNT A SYSCALL, ITS AN ASM CALL!
+//       I will find a place for this in a later date!
+extern void
+cpuid_native(unsigned int *eax,
+             unsigned int *ebx,
+             unsigned int *ecx,
+             unsigned int *edx);
+
 #endif // INCLUDE_PLATFORM_WIN32_HELPER_FN_H
 

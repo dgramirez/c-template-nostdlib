@@ -53,7 +53,11 @@ linux_log(u32 level,
           usz linenum,
           const char *fnname)
 {
+	sticky MCSLock lock;
+	MCSLock me;
 	LogTime lt;
+
+	_mcs_lock(&lock, &me);
 
 	usz is_assert;
 	if (!_g_logger.flags_level || !_g_logger.flags_format)
@@ -198,6 +202,7 @@ linux_log(u32 level,
 
 		fb8_flush(&_g_logger.cb);
 	}
+	_mcs_unlock(&lock, &me);
 }
 
 local void
@@ -299,6 +304,7 @@ linux_crash_print_registers(fb8 *fb, struct ucontext_t *ctx)
 
 	fb8_append(fb, s8("Stack Frames:"));
 	fb8_append_lf(fb);
+
 	rbp = (usz *)greg[REG_RBP];
 	for (frame = 0; frame < 20; ++frame) {
 		if (!rbp)

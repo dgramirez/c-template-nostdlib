@@ -77,8 +77,13 @@ sys_openat(int dirfd,
            int flags,
            mode_t mode);
 
+// Note: THIS ISNT A SYSCALL, ITS AN ASM CALL!
+//       I will find a place for this in a later date!
 extern void
-cpu_mfence();
+cpuid_native(unsigned int *eax,
+             unsigned int *ebx,
+             unsigned int *ecx,
+             unsigned int *edx);
 
 #endif //INCLUDE_PLATFORM_LINUX_SYSCALL_H
 

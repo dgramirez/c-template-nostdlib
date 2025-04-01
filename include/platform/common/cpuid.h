@@ -1,12 +1,6 @@
 #ifndef INCLUDE_ASM_CPUID_H
 #define INCLUDE_ASM_CPUID_H
 
-extern void
-cpuid_native(unsigned int *eax,
-             unsigned int *ebx,
-             unsigned int *ecx,
-             unsigned int *edx);
-
 typedef struct {
 	union {
 		u32 eax;
@@ -76,8 +70,6 @@ typedef struct {
 		};
 	};
 } CpuidBasicInfoAndFeatures;
-
-
 
 #endif // INCLUDE_ASM_CPUID_H
 
