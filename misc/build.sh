@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ROOT="$(dirname $(dirname $(realpath $0))..)"
 SRC="${ROOT}/src"
 INC="${ROOT}/include"
@@ -16,7 +15,6 @@ clean_all() {
 }
 
 BUILD=
-CC_PLT=
 setup_args() {
 	local ARG_VAL=${1}
 	local CHANGED=0
@@ -46,7 +44,26 @@ setup_args() {
 		echo
 
 		if [[ ${CC_PLT} == "" ]]; then
+			CC=tcc
 			CC_PLT=tcc
+			CHANGED=1
+			return 0
+		fi
+
+		echo "Compiler Already Chosen!"
+		echo "Please do not add another compiler to the arguments!"
+		exit 0
+	fi
+
+	if [[ "${ARG_VAL}" == "zig" ]]; then
+		echo "WARNING:"
+		echo "Currently, 0.13.0 is the known-working version."
+		echo "I will wait for 0.14.1 or 0.15.0 to see if things got better"
+		echo
+
+		if [[ ${CC_PLT} == "" ]]; then
+			CC="zig cc"
+			CC_PLT="zig cc"
 			CHANGED=1
 			return 0
 		fi
@@ -135,6 +152,7 @@ setup_args() {
 	exit 1
 }
 
+echo ${CC_PLT}
 setup_args ${1}
 setup_args ${2}
 setup_args ${3}
@@ -156,12 +174,12 @@ fi
 
 OUT="${ROOT}/out"
 if [[ ! -d ${OUT} ]]; then
-	mkdir ${OUT}
+	mkdir "${OUT}"
 fi
 
 OUT_CC=${OUT}/${CC_PLT}
 if [[ ! -d ${OUT_CC} ]]; then
-	mkdir ${OUT_CC}
+	mkdir "${OUT_CC}"
 fi
 
 OUT_DBG=${OUT_CC}/debug
@@ -177,11 +195,11 @@ if [[ "${COMPILE}" == "1" ]]; then
 	echo "// Configuration: Debug //"
 	echo "//////////////////////////"
 	if [[ ! -d ${OUT_DBG} ]]; then
-		mkdir ${OUT_DBG}
+		mkdir "${OUT_DBG}"
 	fi
 
 	echo "Platform Compilation Test: Debug"
-	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -O0    -g \
 		    -D_DEBUG \
 		    -I "${INC}" \
@@ -191,7 +209,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	fi
 
 	echo "Platform Compilation: Debug"
-	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -O0    -g \
 		-D_DEBUG -DUSING_LIBC -lc \
 		-I "${INC}" \
@@ -220,11 +238,11 @@ if [[ "${COMPILE}" == "2" ]]; then
 	echo "////////////////////////////"
 
 	if [[ ! -d ${OUT_REL} ]]; then
-		mkdir ${OUT_REL}
+		mkdir "${OUT_REL}"
 	fi
 
 	echo "Platform Compilation Test: Release"
-	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast \
 		    -D_RELEASE \
 		    -I "${INC}" \
@@ -234,7 +252,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	fi
 
 	echo "Platform Compilation: Release"
-	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_RELEASE -DUSING_LIBC -lc \
 		-I "${INC}" \
@@ -262,11 +280,11 @@ if [[ "${COMPILE}" == "4" ]]; then
 	echo "// Configuration: Debug-Release //"
 	echo "//////////////////////////////////"
 	if [[ ! -d ${OUT_DBR} ]]; then
-		mkdir ${OUT_DBR}
+		mkdir "${OUT_DBR}"
 	fi
 
 	echo "Platform Compilation Test: Debug-Release"
-	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast -g \
 		    -D_DEBUG -D_RELEASE \
 		    -I "${INC}" \
@@ -276,7 +294,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	fi
 
 	echo "Platform Compilation: Debug-Release"
-	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_DEBUG -D_RELEASE -DUSING_LIBC -lc -g \
 		-I "${INC}" \
