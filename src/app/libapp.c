@@ -1,4 +1,4 @@
-#include "nostd_shared.h"
+#include "nostd.h"
 
 global PlatformData *g_platform;
 

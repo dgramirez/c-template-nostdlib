@@ -1,6 +1,10 @@
 #ifndef INCLUDE_S8_H
 #define INCLUDE_S8_H
-// NOTE: #include "type.h" for s8 types
+
+declfn(i32,
+       os_write,
+       unref(b); return -1;,
+       fb8 *b);
 
 //////////
 // cstr //

@@ -4,6 +4,17 @@ ROOT="$(dirname $(dirname $(realpath $0))..)"
 SRC="${ROOT}/src"
 INC="${ROOT}/include"
 
+clean_obj() {
+		cd ${SRC}
+		rm -rf *.o *.obj *.lib *.exp *.pdb
+}
+clean_all() {
+	clean_obj
+
+	cd ${ROOT}
+	rm -rf out
+}
+
 BUILD=
 CC_PLT=
 setup_args() {
@@ -46,12 +57,7 @@ setup_args() {
 	fi
 
 	if [[ "${ARG_VAL}" == *"c"* ]]; then
-		cd ${SRC}
-		rm -rf *.o *.obj *.lib *.exp *.pdb
-
-		cd ${ROOT}
-		rm -rf out
-
+		clean_all
 		echo "Project has been cleaned!"
 		exit 0
 	fi
@@ -175,7 +181,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	fi
 
 	echo "Platform Compilation Test: Debug"
-	$CC_PLT main-linux.c entry-x86_64.o -nostdlib \
+	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -O0    -g \
 		    -D_DEBUG \
 		    -I "${INC}" \
@@ -185,7 +191,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	fi
 
 	echo "Platform Compilation: Debug"
-	$CC main-linux.c entry-x86_64.o -nostdlib \
+	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -O0    -g \
 		-D_DEBUG -DUSING_LIBC -lc \
 		-I "${INC}" \
@@ -195,7 +201,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	fi
 
 	echo "Application Compilation: Debug"
-	$CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
+	$CC ./app/libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -O0    -g \
 		-D_DEBUG \
 		-I "${INC}" \
@@ -218,7 +224,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	fi
 
 	echo "Platform Compilation Test: Release"
-	$CC_PLT main-linux.c entry-x86_64.o -nostdlib \
+	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast \
 		    -D_RELEASE \
 		    -I "${INC}" \
@@ -228,7 +234,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	fi
 
 	echo "Platform Compilation: Release"
-	$CC main-linux.c entry-x86_64.o -nostdlib \
+	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_RELEASE -DUSING_LIBC -lc \
 		-I "${INC}" \
@@ -238,7 +244,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	fi
 
 	echo "Application Compilation: Release"
-	$CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
+	$CC ./app/libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -Ofast \
 		-D_RELEASE \
 		-I "${INC}" \
@@ -260,7 +266,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	fi
 
 	echo "Platform Compilation Test: Debug-Release"
-	$CC_PLT main-linux.c entry-x86_64.o -nostdlib \
+	$CC_PLT entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast -g \
 		    -D_DEBUG -D_RELEASE \
 		    -I "${INC}" \
@@ -270,7 +276,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	fi
 
 	echo "Platform Compilation: Debug-Release"
-	$CC main-linux.c entry-x86_64.o -nostdlib \
+	$CC entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_DEBUG -D_RELEASE -DUSING_LIBC -lc -g \
 		-I "${INC}" \
@@ -280,7 +286,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	fi
 
 	echo "Application Compilation: Debug-Release"
-	$CC libapp.c -shared -fPIC -nostdlib -fno-builtin \
+	$CC ./app/libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -Ofast -g \
 		-D_DEBUG -D_RELEASE \
 		-I "${INC}" \
@@ -289,6 +295,8 @@ if [[ "${COMPILE}" == "4" ]]; then
 		exit ${?}
 	fi
 
+	clean_obj
 	echo
+
 fi
 

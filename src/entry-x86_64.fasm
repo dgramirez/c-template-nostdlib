@@ -9,9 +9,9 @@ match =LINUX, PLATFORM {
 
 	; --- Code Section ---
 	section '.text' executable align 16
-	include "asm/linux-atomics.fasm"
-	include "asm/linux-syscall-x86_64.fasm"
-	include "asm/cpuid-x86_64.fasm"
+	include "platform/syscall-x86_64-linux.fasm"
+	include "cpu/atomics.fasm"
+	include "cpu/cpuid-x86_64.fasm"
 
 	public start as '_start'
 	start:
@@ -33,10 +33,10 @@ match =LINUX, PLATFORM {
 }
 match =WIN64, PLATFORM {
 	format MS64 COFF
-	include "asm/cpuid-x86_64.fasm"
+	include "cpu/cpuid-x86_64.fasm"
 }
 match =WIN32, PLATFORM {
 	format MS COFF
-	include "asm/cpuid-x86_64.fasm"
+	include "cpu/cpuid-x86_64.fasm"
 }
 

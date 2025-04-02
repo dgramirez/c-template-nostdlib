@@ -98,7 +98,7 @@ SET out_drl=%out%\%cc_name%\debug-release
 
 :: Configuration Setup
 SET cc_objs=entry-x86_64-win32.c entry-x86_64.obj
-SET cc_objs_app=libapp.c
+SET cc_objs_app=app\\libapp.c
 IF ["%compiler%"] == ["cl"]     ( CALL :config_msvc )
 IF ["%compiler%"] == ["zig cc"] ( CALL :config_zig )
 

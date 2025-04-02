@@ -1,7 +1,7 @@
 #ifndef SRC_MAIN_LINUX_H
 #define SRC_MAIN_LINUX_H
 
-#include "nostd_platform.h"
+#include "nostdp.h"
 
 local void
 mmm_donuts(void *arg, struct _thread_items *thread);

@@ -41,11 +41,6 @@ typedef struct {
 	usz err;
 } fb8;
 
-declfn(i32,
-       os_write,
-       unref(b); return -1;,
-       fb8 *b);
-
 declfn(void,
        logsz,
        unref(level);unref(msg);unref(file);unref(linenum);unref(fnname);,

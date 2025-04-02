@@ -1,4 +1,4 @@
-#include "main-win32.c"
+#include "platform/main-win32.c"
 
 void
 _start() {
