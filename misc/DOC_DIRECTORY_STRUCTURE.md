@@ -1,4 +1,4 @@
-# Nostd: Directory Structure  
+# NoSTD: Directory Structure  
 
 This is a simple documentation explaining the directory layout for this
 project. Due to me being the person developing this project along with
@@ -15,7 +15,7 @@ updated since I would like some order in this project.
 # Root \(/\)  
 The root directory contains mostly what is expected in a c program.  
 
-#### /misc  
+### /misc  
 This directory contains the scripts and non-readme documentation \(like this
 one!\). For Windows, batch scripts will be used so we don't get users into
 **Bad habits like turning off their Powershell Execution Policy just to
@@ -37,7 +37,7 @@ of one. This is because I wanted to support the cproc compiler, and it
 doesn't support creating shared libraries. In this case, I use the compiler
 that compiles the platform layer, not the shared libraries.  
 
-#### /src  
+### /src  
 This holds the source files for the compiler to compile. Despite being a
 simple directory, a word of warning in that this is a single-module
 compilation. fasm will compile the "entry-${architecture}.fasm" file and
@@ -46,18 +46,18 @@ Here is a quick summary on the subdirectories in here:
 
 <ul>
     <li>
-        **/src/platform:** This is where the core platform layer code
+        <b>/src/platform:</b> This is where the core platform layer code
         resides. This is used to setup all necessary components \(like
         threadpools, memory allocation, graphics, etc.\)
     </li>
     <li>
-        **/src/app:** This is where the application code resides. For
+        <b>/src/app:</b> This is where the application code resides. For
         console applications, This uses 3 functions (init, update, close)
         for the platform layer to call. This may expand once graphics,
         sound and inpute gets involved.
     </li>
     <li>
-        **/src/cpu:** This is where the cpu code resides. This will contain
+        <b>/src/cpu:</b> This is where the cpu code resides. This will contain
         a mixure of fasm and c code to provide the best way of delivering
         cpu features for the platform layer to give to the application.
         To make this simple, if a function, algorithm, data structure, etc.
@@ -78,12 +78,12 @@ layer.\)
 **/include/nostd/:** This is a directory that contains all the necessities
 to make the platform layer work. It is setup in 4 directory:  
 
-#### Inside /include/nostd/ directory:  
+### Inside /include/nostd/ directory:  
 **/include/nostd/core/:** The functions that are relied upon by everything.
 What makes this unique is the idea of being able to be designed to be
 standalone. It will look the ugliest, but it should not disappoint.  
 
-**/include/nostd/ext/** External code from other sources. With an extremely
+**/include/nostd/ext/:** External code from other sources. With an extremely
 few exceptions \(OpenGL might be one of them\), This will only contain
 public domain code. In specific, Any code that the author releases or
 license with a public domain license \(CC-0, UNLICENSE, WTFPL/DWTFYWT,
