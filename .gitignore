@@ -585,7 +585,7 @@ mono_crash.*
 [Rr]eleases/
 x64/
 x86/
-[Ww][Ii][Nn]32/
+#[Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
@@ -1047,6 +1047,7 @@ dkms.conf
 # Raspberry Pi Pico disassembler file
 *.dis
 
-# For some reason, win32/ is not being detected.
-!include/platform/win32
+# Additional
+#    Note: Removed [Ww]{Ii]{Nn]32/
+[Oo][Uu][Tt]/
 

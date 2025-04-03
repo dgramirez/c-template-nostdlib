@@ -1,21 +1,21 @@
 #ifndef INCLUDE_NOSTD_CORE_CORE_H
 #define INCLUDE_NOSTD_CORE_CORE_H
 
+// Common Defines, and Standalone defines
 #include "define.h"
+
+// Primitives & Standalonw Primitive Defines
 #include "platform.h"
 
-// TODO: This needs to be removed!
-#include "type.h"
-
-// TODO: This needs to be standalone!
+// Core Memory Functions & Memory Function Pointers
 #include "memfn.h"
 
-// TODO: We need to fix this! Type and memfn dependency
-#include "str.h"
+// Memory Allocators
+#include "marena.h"
+#include "mpool.h"
 
-// TODO: These need to be standalone!
-#include "arena.h"
-#include "pool.h"
+// String Types
+#include "string.h"
 
 #endif // INCLUDE_NOSTD_CORE_CORE_H
 

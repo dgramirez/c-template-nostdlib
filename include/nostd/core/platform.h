@@ -1,5 +1,5 @@
-#ifndef INCLUDE_PLATFORM_H
-#define INCLUDE_PLATFORM_H
+#ifndef INCLUDE_NOSTD_CORE_PLATFORM_H
+#define INCLUDE_NOSTD_CORE_PLATFORM_H
 
 #ifndef NO_STANDARD_TYPES
 	#include <stdint.h>
@@ -49,5 +49,23 @@ typedef size_t   usz;
 typedef float  f32;
 typedef double f64;
 
-#endif // INCLUDE_PLATFORM_H
+typedef union {
+	void *pv;
+	u8   *pu8;
+	u16  *pu16;
+	u32  *pu32;
+	usz  *pusz;
+} MemUnion;
+
+////////////////////////
+// Standalone Defines //
+////////////////////////
+#define __nostd_u8_t  u8
+#define __nostd_u16_t u16
+#define __nostd_u32_t u32
+#define __nostd_usz_t usz
+
+#define __nostd_memunion MemUnion
+
+#endif // INCLUDE_NOSTD_CORE_PLATFORM_H
 

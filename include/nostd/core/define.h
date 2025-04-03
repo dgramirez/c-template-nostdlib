@@ -1,5 +1,5 @@
-#ifndef INCLUDE_DEFINE_H
-#define INCLUDE_DEFINE_H
+#ifndef INCLUDE_NOSTD_CORE_DEFINE_H
+#define INCLUDE_NOSTD_CORE_DEFINE_H
 
 //////////////////////////////
 // Above All: No Reference! //
@@ -96,11 +96,6 @@
 /////////////////////////////////////
 // Counted Strings, Logs & Asserts //
 /////////////////////////////////////
-#define s8_cntof(x) ((usz)(sizeof(x) / sizeof(*(x))))
-#define s8_lenof(x) (s8_cntof(x) - 1)
-#define s8(x)   ((s8){(u8*)x, s8_lenof(x)})
-#define sb8(x) ((sb8){(u8 *)x, s8_lenof(x), s8_lenof(x)})
-
 #define LOG_LEVEL_GOOFY    0x01
 #define LOG_LEVEL_DEBUG    0x02
 #define LOG_LEVEL_INFO     0x04
@@ -141,17 +136,34 @@
 #if defined(_DEBUG)
 	#define logc_assert(msg) logc(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
 	#define assert(x, s) if (!(x)) { \
-		log_assert(s8(s));           \
+		logc_assert(s);              \
 		usz *___killme = 0;          \
 		*___killme = 0xDEADA55E;     \
 	}
 #elif defined(_DEBUG_RELEASE)
 	#define logc_assert(msg) logc(LOG_LEVEL_ERROR | LOG_LEVEL_ASSERT, msg)
-	#define assert(x, s) if (!(x)) { log_assert(s8(s)); }
+	#define assert(x, s) if (!(x)) { logc_assert(s); }
 #else
 	#define logc_assert(msg)  logc(LOG_LEVEL_ERROR, msg)
 	#define assert(x, s) ;
 #endif
 
-#endif // INCLUDE_DEFINE_H
+////////////////////////
+// Standalone Defines //
+////////////////////////
+#define __GET_NOSTD_STANDALONE_IMPLEMENTATION__
+
+#define __nostd_api                     local
+#define __nostd_extern                  local
+#define __nostd_marena_assert(x, msg)   assert(x, msg)
+#define __nostd_is_pow2(x)              is_pow2(x)
+#define __nostd_align_over(p, a)        align_over(p, a)
+#define __nostd_imin(x, y)              imin(x, y)
+#define __nostd_memcpy(dst, src, size)  memcpyu(dst, src, size)
+#define __nostd_memmove(dst, src, size) memmoveu(dst, src, size)
+#define __nostd_memcmp(dst, src, size)  memcmpu(dst, src, size)
+#define __nostd_memeq(dst, src, size)   memequ(dst, src, size)
+#define __nostd_memzero(dst, size)      memzerou(dst, size)
+
+#endif // INCLUDE_NOSTD_CORE_DEFINE_H
 
