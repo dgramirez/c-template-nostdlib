@@ -31,7 +31,7 @@ Win32Main(int argc, s8 *argv)
 	marena_init(&sysmem, buffer, MB(128), page_size);
 
 	win32_init_logger(&sysmem, 0xFF, 0xF);
-	log_debug(s8("Test!"));
+	atomic_test();
 
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
@@ -55,5 +55,28 @@ Win32Main(int argc, s8 *argv)
 	unref(argc);
 	unref(argv);
 	return 0;
+}
+
+local void
+atomic_test()
+{
+	int x;
+	int y;
+	int z;
+
+	atomic_store(&x, 1337);
+	assert(x == 1337, "Atomic Store has Failed...");
+
+	y = 403;
+	atomic_inc(&y);
+	assert(y == 404, "Atomic Increment has failed...");
+
+	z = 1338;
+	atomic_dec(&z);
+	assert(z == 1337, "Atomic Decrement has failed...");
+
+//	x = 1337;
+//	atomic_cmpxchg(&x, z, y);
+//	assert(x == y, "Atomic Compare & Exchange has failed...");
 }
 

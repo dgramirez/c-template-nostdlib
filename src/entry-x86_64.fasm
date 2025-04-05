@@ -34,9 +34,11 @@ match =LINUX, PLATFORM {
 match =WIN64, PLATFORM {
 	format MS64 COFF
 	include "cpu/cpuid-x86_64.fasm"
+	include "cpu/atomics.fasm"
 }
 match =WIN32, PLATFORM {
 	format MS COFF
 	include "cpu/cpuid-x86_64.fasm"
+	include "cpu/atomics.fasm"
 }
 

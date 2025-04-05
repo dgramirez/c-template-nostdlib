@@ -1,78 +1,314 @@
-; void atomic_store(void *ptr, isz val)
-public atomic_store
-atomic_store:
-	mov [rdi], rsi
+match =LINUX, PLATFORM {
+	; void atomic_store(void *ptr, isz val)
+	public atomic_store
+	atomic_store:
+		use64
+
+		mov [rdi], rsi
+		sfence
+		ret
+
+	; isz atomic_load(void *ptr)
+	public atomic_load
+	atomic_load:
+		use64
+
+		lfence
+		mov rax, [rdi]
+		ret
+
+	; isz atomic_xadd(void *ptr, isz val)
+	public atomic_xadd
+	atomic_xadd:
+		use64
+
+		; Fetch And Add
+		mov rax, rsi
+		lock xadd [rdi], rax
+		ret
+
+	; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
+	public atomic_cmpxchg
+	atomic_cmpxchg:
+		use64
+
+		; Compare and Swap
+		mov rax, rsi
+		lock cmpxchg [rdi], rdx
+		ret
+
+	; isz atomic_xchg64(void *ptr, isz val)
+	public atomic_xchg64
+	atomic_xchg64:
+		use64
+
+		; Swap
+		mov rax, rsi
+		lock xchg [rdi], rax
+		ret
+
+	; void atomic_inc(void *ptr)
+	public atomic_inc
+	atomic_inc:
+		use64
+
+		; Add and Fetch
+		lock add [rdi], WORD 1
+		ret
+
+	; void atomic_dec(void *ptr)
+	public atomic_dec
+	atomic_dec:
+		use64
+
+		; Add and Fetch
+		lock add [rdi], WORD -1
+		ret
+
+	; void atomic_add(void *ptr, void *val)
+	public atomic_add
+	atomic_add:
+		use64
+
+		; Add and Fetch
+		lock add [rdi], rsi
+		ret
+
+	; void atomic_bit_set(void *ptr, void *val)
+	public atomic_bit_set
+	atomic_bit_set:
+		use64
+
+		; Or and Fetch
+		lock or [rdi], rsi
+		ret
+
+	; void atomic_bit_clear(void *ptr, void *val)
+	public atomic_bit_clear
+	atomic_bit_clear:
+		use64
+
+		; And and Fetch
+		not rsi
+		lock and [rdi], rsi
+		ret
+}
+
+match =WIN64, PLATFORM {
+	; void atomic_store(void *ptr, isz val)
+	public atomic_store
+	atomic_store:
+		use64
+
+		mov [rcx], rdx
+		sfence
+		ret
+
+	; isz atomic_load(void *ptr)
+	public atomic_load
+	atomic_load:
+		use64
+
+		lfence
+		mov rax, [rcx]
+		ret
+
+	; isz atomic_xadd(void *ptr, isz val)
+	public atomic_xadd
+	atomic_xadd:
+		use64
+
+		; Fetch And Add
+		mov rax, rdx
+		lock xadd [rcx], rax
+		ret
+
+	; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
+	public atomic_cmpxchg
+	atomic_cmpxchg:
+		use64
+
+		; Compare and Swap
+		mov rax, rdx
+		lock cmpxchg [rcx], r8
+		ret
+
+	; isz atomic_xchg64(void *ptr, isz val)
+	public atomic_xchg64
+	atomic_xchg64:
+		use64
+
+		; Swap
+		mov rax, rdx
+		lock xchg [rcx], rax
+		ret
+
+	; void atomic_inc(void *ptr)
+	public atomic_inc
+	atomic_inc:
+		use64
+
+		; Add and Fetch
+		lock add [rcx], WORD 1
+		ret
+
+	; void atomic_dec(void *ptr)
+	public atomic_dec
+	atomic_dec:
+		use64
+
+		; Add and Fetch
+		lock add [rcx], WORD -1
+		ret
+
+	; void atomic_add(void *ptr, void *val)
+	public atomic_add
+	atomic_add:
+		use64
+
+		; Add and Fetch
+		lock add [rcx], rdx
+		ret
+
+	; void atomic_bit_set(void *ptr, void *val)
+	public atomic_bit_set
+	atomic_bit_set:
+		use64
+
+		; Or and Fetch
+		lock or [rcx], rdx
+		ret
+
+	; void atomic_bit_clear(void *ptr, void *val)
+	public atomic_bit_clear
+	atomic_bit_clear:
+		use64
+
+		; And and Fetch
+		not rdx
+		lock and [rcx], rdx
+		ret
+}
+
+match =WIN32, PLATFORM {
+	; void __fastcall atomic_store(void *ptr, isz val)
+	public atomic_store as '@atomic_store@8'
+	atomic_store:
+		use32
+
+		mov [ecx], edx
+		sfence
+		ret
+
+	; isz __fastcall atomic_load(void *ptr)
+	public atomic_load as '@atomic_load@4'
+	atomic_load:
+		use32
+
+		lfence
+		mov eax, [ecx]
+		ret
+
+	; isz __fastcall atomic_add(void *ptr, isz val)
+	public atomic_xadd as '@atomic_xadd@8'
+	atomic_xadd:
+		use32
+
+		; Fetch And Add
+		mov eax, edx
+		lock xadd [ecx], eax
+		ret
+
+	; isz __fastcall atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
+	public atomic_cmpxchg as '@atomic_cmpxchg@12'
+	atomic_cmpxchg:
+		use32
+
+		; Compare and Swap
+		push ebx
+		push esi
+
+		mov esi, [esp+(1+2)*4]
+		mov ebx, esi
+
+		mov eax, edx
+		lock cmpxchg [ecx], ebx
+
+		pop esi
+		pop ebx
+
+		ret
+
+	; isz __fastcall atomic_xchg64(void *ptr, isz val)
+	public atomic_xchg64 as '@atomic_xchg64@8'
+	atomic_xchg64:
+		use32
+
+		; Swap
+		mov eax, edx
+		lock xchg [ecx], eax
+		ret
+
+	; void __fastcall atomic_inc(void *ptr)
+	public atomic_inc as '@atomic_inc@4'
+	atomic_inc:
+		use32
+
+		; Add and Fetch
+		lock add [ecx], WORD 1
+		ret
+
+	; void __fastcall atomic_dec(void *ptr)
+	public atomic_dec as '@atomic_dec@4'
+	atomic_dec:
+		use32
+
+		; Add and Fetch
+		lock add [ecx], WORD -1
+		ret
+
+	; void __fastcall atomic_add(void *ptr, void *val)
+	public atomic_add as '@atomic_add@8'
+	atomic_add:
+		use32
+
+		; Add and Fetch
+		lock add [ecx], edx
+		ret
+
+	; void __fastcall atomic_bit_set(void *ptr, void *val)
+	public atomic_bit_set as '@atomic_bit_set@8'
+	atomic_bit_set:
+		use32
+
+		; Or and Fetch
+		lock or [ecx], edx
+		ret
+
+	; void __fastcall atomic_bit_clear(void *ptr, void *val)
+	public atomic_bit_clear as '@atomic_bit_clear@8'
+	atomic_bit_clear:
+		use32
+
+		; And and Fetch
+		not edx
+		lock and [ecx], edx
+		ret
+}
+
+; void load_barrier()
+public load_barrier
+load_barrier:
+	lfence
+	ret
+
+; void store_barrier()
+public store_barrier
+store_barrier:
 	sfence
 	ret
 
-; isz atomic_store(void *ptr)
-public atomic_load
-atomic_load:
-	lfence
-	mov rax, [rdi]
-	ret
-
-; isz atomic_add(void *ptr, isz val)
-public atomic_xadd
-atomic_xadd:
-	; Fetch And Add
-	mov rax, rsi
-	lock xadd [rdi], rax
-	ret
-
-; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-public atomic_cmpxchg
-atomic_cmpxchg:
-	; Compare and Swap
-	mov rax, rsi
-	lock cmpxchg [rdi], rdx
-	ret
-
-; isz atomic_xchg64(void *ptr, isz val)
-public atomic_xchg64
-atomic_xchg64:
-	; Swap
-	mov rax, rsi
-	lock xchg [rdi], rax
-	ret
-
-; void atomic_inc(void *ptr)
-public atomic_inc
-atomic_inc:
-	; Add and Fetch
-	lock add [rdi], WORD 1
-	ret
-
-; void atomic_dec(void *ptr)
-public atomic_dec
-atomic_dec:
-	; Add and Fetch
-	lock add [rdi], WORD -1
-	ret
-
-; void atomic_add(void *ptr, void *val)
-public atomic_add
-atomic_add:
-	; Add and Fetch
-	lock add [rdi], rsi
-	ret
-
-; void atomic_bit_set(void *ptr, void *val)
-public atomic_bit_set
-atomic_bit_set:
-	; Or and Fetch
-	lock or [rdi], rsi
-	ret
-
-; void atomic_bit_clear(void *ptr, void *val)
-public atomic_bit_clear
-atomic_bit_clear:
-	; And and Fetch
-	not rsi
-	lock and [rdi], rsi
-	ret
-
-; void memory_barrier()
+; void mem_barrier()
 public mem_barrier
 mem_barrier:
 	mfence

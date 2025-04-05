@@ -1,9 +1,9 @@
 #ifndef INCLUDE_LINUX_H
 #define INCLUDE_LINUX_H
 
-////////////
-// Common //
-////////////
+///////////////////
+// Core & Common //
+///////////////////
 #include "../common/common.h"
 
 /////////////////////////////
@@ -21,6 +21,11 @@
 #include "linux/atomic.h"
 #include "linux/thread.h"
 #include "linux/helper_fn.h"
+
+/////////////////////
+// Common-Platform //
+/////////////////////
+#include "common-platform.h"
 
 ////////////////////////////////
 // Additional Linux Functions //
