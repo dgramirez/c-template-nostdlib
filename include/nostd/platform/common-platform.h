@@ -18,5 +18,11 @@
 #include "common/atomic.h"
 #include "common/cpuid.h"
 
+////////////////////////////////
+// Remaining Common Functions //
+////////////////////////////////
+#include "common/mcs_lock.h"
+#include "common/queue_appjob.h"
+
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_PLATFORM_H
 

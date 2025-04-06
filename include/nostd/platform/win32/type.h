@@ -11,3 +11,4 @@ typedef struct {
 } Logger;
 
 #endif // INCLUDE_PLATFORM_WIN32_TYPE_H
+

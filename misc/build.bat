@@ -284,7 +284,8 @@ GOTO :EOF
 :config_msvc
 	SET cc_flags_common=
 
-	SET cc_objs=%cc_objs% Kernel32.lib User32.lib Gdi32.lib Opengl32.lib
+	SET cc_objs=%cc_objs% Kernel32.lib User32.lib Gdi32.lib Opengl32.lib ^
+	Synchronization.lib
 	SET cc_flags=/EHa- /fp:except- /fp:fast /GL- /Gm- /GR- /GS- /W4 /WX ^
 	/Gs2147483647 /nologo /wd4201 /I"%inc%" %cc_flags%
 	SET link_flags=/link /WX /STACK:0x200000,0x200000 /INCREMENTAL:NO ^
@@ -325,7 +326,8 @@ GOTO :EOF
 	SET link_rel_app=/DEBUG:NONE /RELEASE /OUT:"%out_rel%\%app_name%.dll"
 	SET link_drl_app=/DEBUG:FULL /OUT:"%out_drl%\%app_name%.dll"
 
-	SET cc_objs=%cc_objs% -lkernel32 -luser32 -lgdi32 -lopengl32
+	SET cc_objs=%cc_objs% -lkernel32 -luser32 -lgdi32 -lopengl32 ^
+	-lsynchronization
 	SET cc_flags=%cc_flags_app% -e "_start" /SUBSYSTEM:CONSOLE ^
 	%cc_flags%
 

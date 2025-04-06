@@ -1,5 +1,5 @@
-#ifndef INCLUDE_ASM_CPUID_H
-#define INCLUDE_ASM_CPUID_H
+#ifndef INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
+#define INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
 
 typedef struct {
 	union {
@@ -71,5 +71,5 @@ typedef struct {
 	};
 } CpuidBasicInfoAndFeatures;
 
-#endif // INCLUDE_ASM_CPUID_H
+#endif // INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
 

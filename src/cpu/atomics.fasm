@@ -92,6 +92,30 @@ match =LINUX, PLATFORM {
 		not rsi
 		lock and [rdi], rsi
 		ret
+
+	; void load_barrier()
+	public load_barrier
+	load_barrier:
+		lfence
+		ret
+
+	; void store_barrier()
+	public store_barrier
+	store_barrier:
+		sfence
+		ret
+
+	; void mem_barrier()
+	public mem_barrier
+	mem_barrier:
+		mfence
+		ret
+
+	; void cpu_relax()
+	public cpu_relax
+	cpu_relax:
+		pause
+		ret
 }
 
 match =WIN64, PLATFORM {
@@ -187,6 +211,30 @@ match =WIN64, PLATFORM {
 		; And and Fetch
 		not rdx
 		lock and [rcx], rdx
+		ret
+
+	; void load_barrier()
+	public load_barrier
+	load_barrier:
+		lfence
+		ret
+
+	; void store_barrier()
+	public store_barrier
+	store_barrier:
+		sfence
+		ret
+
+	; void mem_barrier()
+	public mem_barrier
+	mem_barrier:
+		mfence
+		ret
+
+	; void cpu_relax()
+	public cpu_relax
+	cpu_relax:
+		pause
 		ret
 }
 
@@ -294,29 +342,29 @@ match =WIN32, PLATFORM {
 		not edx
 		lock and [ecx], edx
 		ret
+
+	; void load_barrier()
+	public load_barrier as '@load_barrier@0'
+	load_barrier:
+		lfence
+		ret
+
+	; void store_barrier()
+	public store_barrier as '@store_barrier@0'
+	store_barrier:
+		sfence
+		ret
+
+	; void mem_barrier()
+	public mem_barrier as '@mem_barrier@0'
+	mem_barrier:
+		mfence
+		ret
+
+	; void cpu_relax()
+	public cpu_relax as '@cpu_relax@0'
+	cpu_relax:
+		pause
+		ret
 }
-
-; void load_barrier()
-public load_barrier
-load_barrier:
-	lfence
-	ret
-
-; void store_barrier()
-public store_barrier
-store_barrier:
-	sfence
-	ret
-
-; void mem_barrier()
-public mem_barrier
-mem_barrier:
-	mfence
-	ret
-
-; void cpu_relax()
-public cpu_relax
-cpu_relax:
-	pause
-	ret
 

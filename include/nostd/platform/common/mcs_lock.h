@@ -1,23 +1,43 @@
-#ifndef INCLUDE_PLATFORM_LINUX_MCS_LOCK_H
-#define INCLUDE_PLATFORM_LINUX_MCS_LOCK_H
+#ifndef INCLUDE_NOSTD_PLATFORM_COMMON_MCS_LOCK_H
+#define INCLUDE_NOSTD_PLATFORM_COMMON_MCS_LOCK_H
 
 // Note: This code came from a wonderful source in where it proved
 //       the MCS contention-free lock solves the critical section problem
 //
 // Read: https://web.archive.org/web/20140411142823/http://www.cise.ufl.edu/tr/DOC/REP-1992-71.pdf
 
-typedef struct _mcs_lock_data {
-	struct _mcs_lock_data *next;
+/////////////////////////////
+// Structures & Prototypes //
+/////////////////////////////
+typedef struct _mcs_lock {
+	struct _mcs_lock *next;
 	u32 locked;
 } MCSLock;
 
 typedef struct {
-	MCSLock  me;
+	MCSLock me;
 	MCSLock *lock;
 } MCSMutex;
 
 local void
-_mcs_lock(MCSLock *lock, MCSLock *me)
+__mcs_lock(MCSLock *lock,
+           MCSLock *me);
+
+local void
+__mcs_unlock(MCSLock *lock,
+             MCSLock *me);
+
+local void
+mcs_lock(MCSMutex *m);
+
+local void
+mcs_unlock(MCSMutex *m);
+
+//////////////////////////
+// Function Definitions //
+//////////////////////////
+local void
+__mcs_lock(MCSLock *lock, MCSLock *me)
 {
 	MCSLock *pred;
 	int spin;
@@ -34,17 +54,19 @@ _mcs_lock(MCSLock *lock, MCSLock *me)
 			if ((spin--) > 0)
 				cpu_relax();
 			else
-				futex_wait(&me->locked, 1);
+				__thread_wait(&me->locked, 1);
 		}
 	}
 }
 
 local void
-_mcs_unlock(MCSLock *lock, MCSLock *me)
+__mcs_unlock(MCSLock *lock, MCSLock *me)
 {
+	isz _me = (isz)me;
 	if (!me->next) {
-		if (atomic_cmpxchg(lock, (isz)me, 0) == (isz)me)
+		if (atomic_cmpxchg(lock, _me, 0) == _me) {
 			return;
+		}
 
 		do {
 			cpu_relax();
@@ -53,7 +75,7 @@ _mcs_unlock(MCSLock *lock, MCSLock *me)
 
 	if (atomic_load(&me->next->locked) == 1) {
 		atomic_store(&me->next->locked, 0);
-		futex_wake(&me->next->locked, 1);
+		__thread_wake_one(&me->next->locked);
 	}
 	else
 		atomic_store(&me->next->locked, 0);
@@ -62,13 +84,14 @@ _mcs_unlock(MCSLock *lock, MCSLock *me)
 local void
 mcs_lock(MCSMutex *m)
 {
-	_mcs_lock(m->lock, &m->me);
+	__mcs_lock(m->lock, &m->me);
 }
 
 local void
 mcs_unlock(MCSMutex *m)
 {
-	_mcs_unlock(m->lock, &m->me);
+	__mcs_unlock(m->lock, &m->me);
 }
-#endif // INCLUDE_PLATFORM_LINUX_MCS_LOCK_H
+
+#endif // INCLUDE_NOSTD_PLATFORM_COMMON_MCS_LOCK_H
 

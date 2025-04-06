@@ -143,5 +143,17 @@ Win32CpuidGetVendor(u8 *buffer,
 	return b;
 }
 
+local void
+Win32AddressWait(u32 *addr, u32 expected)
+{
+	u32 val;
+
+	val = expected;
+	while (val == expected) {
+		WaitOnAddress(addr, &val, sizeof(u32), INFINITE);
+		val = *addr;
+	}
+}
+
 #endif // INCLUDE_PLATFORM_WIN32_HELPER_FN_H
 

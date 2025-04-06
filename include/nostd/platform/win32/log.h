@@ -58,6 +58,11 @@ win32_log(u32 level,
 	ULONGLONG  time_100ns;
 	CONSOLE_SCREEN_BUFFER_INFO csbi = {0};
 	usz is_assert;
+	
+	sticky MCSLock lock;
+	MCSLock me;
+
+	__mcs_lock(&lock, &me);
 	if (!_g_logger.flags_level || !_g_logger.flags_format)
 		return;
 
@@ -77,9 +82,9 @@ win32_log(u32 level,
 		return;
 
 	is_assert = 0;
-	if (flag_has(_g_logger.flags_level, LOG_LEVEL_ASSERT)) {
+	if (flag_has(level, LOG_LEVEL_ASSERT)) {
 		is_assert = 1;
-		flag_rem(_g_logger.flags_level, LOG_LEVEL_ASSERT);
+		flag_rem(level, LOG_LEVEL_ASSERT);
 	}
 
 	GetConsoleScreenBufferInfo(_g_logger.cb.fd, &csbi);
@@ -213,6 +218,8 @@ win32_log(u32 level,
 
 		fb8_flush(&_g_logger.cb);
 	}
+	__mcs_unlock(&lock, &me);
+
 }
 
 local void
@@ -534,7 +541,7 @@ win32_crash_handler(PEXCEPTION_POINTERS ExceptionInfo)
 {
 	CONTEXT *ctx = ExceptionInfo->ContextRecord;
 
-	fb8 fb;
+	fb8 fb = {0};
 	u8 buffer[KB(4)];
 
 	fb.data = buffer;

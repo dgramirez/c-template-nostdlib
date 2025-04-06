@@ -32,6 +32,7 @@ Win32Main(int argc, s8 *argv)
 
 	win32_init_logger(&sysmem, 0xFF, 0xF);
 	atomic_test();
+	queue_test(&sysmem);
 
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
@@ -60,9 +61,9 @@ Win32Main(int argc, s8 *argv)
 local void
 atomic_test()
 {
-	int x;
-	int y;
-	int z;
+	isz x;
+	isz y;
+	isz z;
 
 	atomic_store(&x, 1337);
 	assert(x == 1337, "Atomic Store has Failed...");
@@ -75,8 +76,53 @@ atomic_test()
 	atomic_dec(&z);
 	assert(z == 1337, "Atomic Decrement has failed...");
 
-//	x = 1337;
-//	atomic_cmpxchg(&x, z, y);
-//	assert(x == y, "Atomic Compare & Exchange has failed...");
+	x = 1337;
+	atomic_cmpxchg(&x, z, y);
+	assert(x == y, "Atomic Compare & Exchange has failed...");
 }
 
+local void
+queue_test(MArena *sysmem)
+{
+	MPool p;
+	MArenaTemp temp;
+	AppJobQueue q;
+	u32 f;
+	AppJobNode *job;
+
+	marena_save(&temp, sysmem);
+	mpool_init(&p,
+	            marena_alloc(sysmem, KB(4), 8),
+	            KB(4),
+	            sizeof(AppJobNode),
+	            8);
+
+	queue_appjob_init(&q, &p, &f);
+
+	log_debug(s8("Queue #1"));
+	queue_appjob_enqueue(&q, test_fn1, 0, 0);
+
+	log_debug(s8("Queue #2"));
+	queue_appjob_enqueue(&q, test_fn2, 0, 0);
+
+	log_debug(s8("Queue #3"));
+	queue_appjob_enqueue(&q, test_fn3, 0, 0);
+
+	log_debug(s8("Dequeue #1"));
+	queue_appjob_dequeue(&q, &job);
+	assert(job->fn == test_fn1, "First Queue is NOT the first item!");
+
+	log_debug(s8("Dequeue #2"));
+	queue_appjob_dequeue(&q, &job);
+	assert(job->fn == test_fn2, "Second Queue is NOT the second item!");
+
+	log_debug(s8("Dequeue #3"));
+	queue_appjob_dequeue(&q, &job);
+	assert(job->fn == test_fn3, "Third Queue is NOT the third item!");
+
+	log_debug(s8("Dequeue #4"));
+	queue_appjob_dequeue(&q, &job);
+	assert(job == 0, "Fourth Queue is NOT 0, or null!");
+
+	marena_load(&temp);
+}

@@ -22,10 +22,10 @@ atomic_inc(void *ptr);
 extern void __atomic_asm_prefix
 atomic_dec(void *ptr);
 
-extern void
+extern void __atomic_asm_prefix
 mem_barrier();
 
-extern void
+extern void __atomic_asm_prefix
 cpu_relax();
 
 #endif // INCLUDE_PLATFORM_COMMON_ATOMIC_H
