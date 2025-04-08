@@ -12,6 +12,9 @@
 typedef struct _mcs_lock {
 	struct _mcs_lock *next;
 	u32 locked;
+#if ARCH_EXE == 64
+	u32 reserved;
+#endif
 } MCSLock;
 
 typedef struct {
@@ -45,7 +48,7 @@ __mcs_lock(MCSLock *lock, MCSLock *me)
 	atomic_store(&me->next, 0);
 	atomic_store(&me->locked, 0);
 
-	pred = (MCSLock *)atomic_xchg64(lock, (isz)me);
+	pred = (MCSLock *)atomic_swap(lock, (isz)me);
 	if (pred) {
 		atomic_store(&me->locked, 1);
 		atomic_store(&pred->next, (isz)me);
@@ -64,7 +67,7 @@ __mcs_unlock(MCSLock *lock, MCSLock *me)
 {
 	isz _me = (isz)me;
 	if (!me->next) {
-		if (atomic_cmpxchg(lock, _me, 0) == _me) {
+		if (atomic_cas(lock, _me, 0) == _me) {
 			return;
 		}
 
@@ -90,6 +93,63 @@ mcs_lock(MCSMutex *m)
 local void
 mcs_unlock(MCSMutex *m)
 {
+	__mcs_unlock(m->lock, &m->me);
+}
+
+// TODO: Slab Allocator w/ 32-bytes (16-bytes for x32) should suffice.
+local AppLock
+tlock_create_mcslock(MArena *a)
+{
+	return marena_alloc(a, sizeof(MCSLock), two_word_size);
+}
+
+local AppMLock
+mlock_init_mcslock(MArena   *a,
+                   AppLock  *_lock,
+                   AppMLock *_mlock)
+{
+	MCSLock  *lock;
+	MCSMutex *m;
+	MCSMutex *r;
+
+	lock = (MCSLock *)_lock; 
+	m    = (MCSMutex *)_mlock;
+	if (m && lock) {
+		assert(m->lock == lock,
+			   "Lock Mismatch: mtx->lock and lock do not match.\n"
+			   "Hint: mlock_init doesn't need both lock parameters. "
+			   "Without AppLock, it'll use AppMLock's lock. "
+			   "Without AppMLock, it'll use the AppLock itself. "
+			   "Lastly, without both will create a brand new AppLock.");
+	}
+
+	r = marena_alloc(a, sizeof(MCSMutex), two_word_size);
+
+	if (lock) {
+		r->lock = lock;
+		return r;
+	}
+
+	if (m && m->lock) {
+		r->lock = m->lock;
+		return r;
+	}
+
+	r->lock = tlock_create_mcslock(a);
+	return r;
+}
+
+local void
+mlock_acquire_mcslock(AppMLock _lock)
+{
+	MCSMutex *m = (MCSMutex *)_lock;
+	__mcs_lock(m->lock, &m->me);
+}
+
+local void
+mlock_release_mcslock(AppMLock _lock)
+{
+	MCSMutex *m = (MCSMutex *)_lock;
 	__mcs_unlock(m->lock, &m->me);
 }
 

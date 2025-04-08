@@ -3,7 +3,6 @@
 
 extern char **environ;
 static char **auxv = 0;
-global Logger _g_logger = {0};
 
 #ifndef USING_LIBC
 	static AuxV _g_auxv;

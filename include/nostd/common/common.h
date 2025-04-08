@@ -3,6 +3,7 @@
 
 // All the core items
 #include "../core/core.h"
+#include "typedefs.h"
 
 #include "log.h"
 #include "par.h"

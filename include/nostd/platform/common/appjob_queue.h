@@ -27,10 +27,10 @@ typedef struct _app_job_ptr {
 	(!(x.ptr == y.ptr || x.count == y.count))
 
 #define AppJobPtr_SwapNode(p, o, n) \
-	atomic_cmpxchg(p.ptr, (isz)o.ptr, (isz)n)
+	atomic_cas(p.ptr, (isz)o.ptr, (isz)n)
 
 #define AppJobPtr_SwapPtr(p, o, n) \
-	atomic_cmpxchg(p.ptr, (isz)o.ptr, (isz)n.ptr)
+	atomic_cas(p.ptr, (isz)o.ptr, (isz)n.ptr)
 
 typedef struct _app_job_node {
 	AppJobFn   fn;

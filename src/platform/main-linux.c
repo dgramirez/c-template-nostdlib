@@ -172,12 +172,12 @@ print_fn_addresses(MArena *a)
 	fb8_append_hex(&fb, (usz)atomic_dec);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_cmpxchg:      "));
-	fb8_append_hex(&fb, (usz)atomic_cmpxchg);
+	fb8_append(&fb, s8("atomic_cas:      "));
+	fb8_append_hex(&fb, (usz)atomic_cas);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_xchg64:       "));
-	fb8_append_hex(&fb, (usz)atomic_xchg64);
+	fb8_append(&fb, s8("atomic_swap:       "));
+	fb8_append_hex(&fb, (usz)atomic_swap);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("_mcs_lock:           "));

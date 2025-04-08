@@ -28,7 +28,13 @@
 #define flag_has(x, flag) ((x) & (flag))
 #define flag_all(x, flag) ((x) & (flag) == (flag))
 
-#define page_size KB(4)
+#define page_size         KB(4)
+#define word_size        (sizeof(void *))
+#define two_word_size    (sizeof(void *) << 1)
+#define sse_word_size    16
+#define avx_word_size    32
+#define avx512_word_size 64
+#define amx_word_size    128
 
 ////////////////////////////
 // Architecture Detection //

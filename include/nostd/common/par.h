@@ -18,13 +18,17 @@
 //       and parse through them (either all, bulk, or single) to update the
 //       client.
 typedef struct {
-	b8 bufapp;
-	PFN_logsz logsz;
-	PFN_logs8 logs8;
-	i32 (*os_write)(fb8 *b);
-	b8  (*get_cpu_vendor)(u8*, usz);
-	void *std_out;
-	i32 run_app;
+	b8                bufapp;
+	PFN_logsz         logsz;
+	PFN_logs8         logs8;
+	PFN_os_write      os_write;
+	PFN_cpuid_vendor  cpuid_vendor;
+	PFN_mlock_init    mlock_init;
+	PFN_mlock_acquire mlock_acquire;
+	PFN_mlock_release mlock_release;
+	AppLock           tlock_terminal;
+	FdStdOut          std_out;
+	i32               run_app;
 } PlatformData;
 
 #ifdef _MSC_VER

@@ -13,7 +13,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "win32/type.h"
-#include "win32/global_var.h"
 #include "win32/helper_fn.h"
 
 /////////////////////

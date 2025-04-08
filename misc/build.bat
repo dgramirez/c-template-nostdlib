@@ -81,9 +81,6 @@ IF ["%clean%"] == ["1"] (
 	GOTO :EOF
 )
 
-:: TODO - Figure this shit out.
-::        I need to set cc_name as soon as either where zig
-::        or setup_cl.bat is ran.
 SET fasm_arch=WIN64
 IF ["%compiler%"] == ["cl"]     ( CALL :detect_msvc )
 IF ["%compiler%"] == ["zig cc"] ( CALL :detect_zig )
@@ -112,30 +109,48 @@ PUSHD "%SRC%"
 	SET /A "1/(build&1)" 2>nul && (
 		IF NOT EXIST "%out_dbg%" ( mkdir %out_dbg% )
 
-		%compiler% %cc_flags% %cc_dbg% %cc_objs% %link_flags% %link_dbg%
+		IF ["%compiler%"] == ["cl"] (
+			ECHO Debug: Compiling Platform Exectuable
+			%compiler% %cc_flags% %cc_dbg% %cc_objs% %link_flags% %link_dbg%
+			ECHO.
+		)
 
-		%compiler% %cc_flags_app% %cc_dbg_app% %cc_objs_app% ^
+		ECHO Debug: Compiling Application DLL
+		%compiler% %cc_flags_app% %cc_dbg% %cc_objs_app% ^
 			%link_flags_app% %link_dbg_app%
+		ECHO.
 	)
 	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&2)" 2>nul && (
 		IF NOT EXIST "%out_rel%" ( mkdir %out_rel% )
 		
-		%compiler% %cc_flags% %cc_rel% %cc_objs% %link_flags% %link_rel%
+		IF ["%compiler%"] == ["cl"] (
+			ECHO Release: Compiling Platform Exectuable
+			%compiler% %cc_flags% %cc_rel% %cc_objs% %link_flags% %link_rel%
+			ECHO.
+		)
 
-		%compiler% %cc_flags_app% %cc_rel_app% %cc_objs_app% ^
+		ECHO Release: Compiling Application DLL
+		%compiler% %cc_flags_app% %cc_rel% %cc_objs_app% ^
 			%link_flags_app% %link_rel_app%
+		ECHO.
 	)
 	IF ["%ERRORLEVEL%"] == ["1"] ( ECHO "FAILED" && GOTO :EOF )
 
 	SET /A "1/(build&4)" 2>nul && (
 		IF NOT EXIST "%out_drl%" ( mkdir %out_drl% )
 
-		%compiler% %cc_flags% %cc_drl% %cc_objs% %link_flags% %link_drl%
+		IF ["%compiler%"] == ["cl"] (
+			ECHO Debug-Release: Compiling Platform Exectuable
+			%compiler% %cc_flags% %cc_drl% %cc_objs% %link_flags% %link_drl%
+			ECHO.
+		)
 
-		%compiler% %cc_flags_app% %cc_drl_app% %cc_objs_app% ^
+		ECHO Debug-Release: Compiling Application DLL
+		%compiler% %cc_flags_app% %cc_drl% %cc_objs_app% ^
 			%link_flags_app% %link_drl_app%
+		ECHO.
 	)
 
 	del /S /Q /F *.obj *.o *.pdb *.lib >nul 2>nul
@@ -309,6 +324,21 @@ GOTO :EOF
 GOTO :EOF
 
 :config_zig
+	ECHO MAJOR WARNINGS:
+	ECHO 1. The Latest Zig Version, 0.14.0, is a pain to setup correctly
+	ECHO    with the -nostdlib, while also directly setting lld-link flags.
+	ECHO    Currently, Zig Version 0.13.0 is supported for all non-platform
+	ECHO    compilation until the lld-flags / compilation issues are
+	ECHO    resolved in later versions or I figure out how to get 0.14.0 to
+	ECHO    compile its own dependencies with all required flags.
+	ECHO.
+	ECHO 2. Zig will not compile the platform-layer at all. This is due to
+	ECHO    a missing library in the 0.13.0 version: Synchronization.lib.
+	ECHO    The library is required for using WaitOnAddress, WakeByAddress*
+	ECHO    Functions. Using -lsynchronization will fail unfortunately.
+	ECHO.
+	ECHO    The All other modules should not have this issue.
+
 	SET TEMP=
 	FOR /F "tokens=* delims=" %%i IN ('where zig') DO SET "TEMP=%%~dpi"
 	SET TEMP="%TEMP%\lib\libc\include\any-windows-any"

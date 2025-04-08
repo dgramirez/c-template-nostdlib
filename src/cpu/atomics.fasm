@@ -17,19 +17,9 @@ match =LINUX, PLATFORM {
 		mov rax, [rdi]
 		ret
 
-	; isz atomic_xadd(void *ptr, isz val)
-	public atomic_xadd
-	atomic_xadd:
-		use64
-
-		; Fetch And Add
-		mov rax, rsi
-		lock xadd [rdi], rax
-		ret
-
-	; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-	public atomic_cmpxchg
-	atomic_cmpxchg:
+	; isz atomic_cas(void *ptr, isz old_val, isz new_val)
+	public atomic_cas
+	atomic_cas:
 		use64
 
 		; Compare and Swap
@@ -37,9 +27,9 @@ match =LINUX, PLATFORM {
 		lock cmpxchg [rdi], rdx
 		ret
 
-	; isz atomic_xchg64(void *ptr, isz val)
-	public atomic_xchg64
-	atomic_xchg64:
+	; isz atomic_swap(void *ptr, isz val)
+	public atomic_swap
+	atomic_swap:
 		use64
 
 		; Swap
@@ -105,9 +95,9 @@ match =LINUX, PLATFORM {
 		sfence
 		ret
 
-	; void mem_barrier()
-	public mem_barrier
-	mem_barrier:
+	; void cpu_barrier()
+	public cpu_barrier
+	cpu_barrier:
 		mfence
 		ret
 
@@ -148,8 +138,8 @@ match =WIN64, PLATFORM {
 		ret
 
 	; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-	public atomic_cmpxchg
-	atomic_cmpxchg:
+	public atomic_cas
+	atomic_cas:
 		use64
 
 		; Compare and Swap
@@ -157,9 +147,9 @@ match =WIN64, PLATFORM {
 		lock cmpxchg [rcx], r8
 		ret
 
-	; isz atomic_xchg64(void *ptr, isz val)
-	public atomic_xchg64
-	atomic_xchg64:
+	; isz atomic_swap(void *ptr, isz val)
+	public atomic_swap
+	atomic_swap:
 		use64
 
 		; Swap
@@ -225,9 +215,9 @@ match =WIN64, PLATFORM {
 		sfence
 		ret
 
-	; void mem_barrier()
-	public mem_barrier
-	mem_barrier:
+	; void cpu_barrier()
+	public cpu_barrier
+	cpu_barrier:
 		mfence
 		ret
 
@@ -268,8 +258,8 @@ match =WIN32, PLATFORM {
 		ret
 
 	; isz __fastcall atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-	public atomic_cmpxchg as '@atomic_cmpxchg@12'
-	atomic_cmpxchg:
+	public atomic_cas as '@atomic_cas@12'
+	atomic_cas:
 		use32
 
 		; Compare and Swap
@@ -287,9 +277,9 @@ match =WIN32, PLATFORM {
 
 		ret
 
-	; isz __fastcall atomic_xchg64(void *ptr, isz val)
-	public atomic_xchg64 as '@atomic_xchg64@8'
-	atomic_xchg64:
+	; isz __fastcall atomic_swap(void *ptr, isz val)
+	public atomic_swap as '@atomic_swap@8'
+	atomic_swap:
 		use32
 
 		; Swap
@@ -355,9 +345,9 @@ match =WIN32, PLATFORM {
 		sfence
 		ret
 
-	; void mem_barrier()
-	public mem_barrier as '@mem_barrier@0'
-	mem_barrier:
+	; void cpu_barrier()
+	public cpu_barrier as '@cpu_barrier@0'
+	cpu_barrier:
 		mfence
 		ret
 

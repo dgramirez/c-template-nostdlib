@@ -6,6 +6,7 @@ Win32Main(int argc, s8 *argv)
 	MArena sysmem;
 	PlatformData pd = {0};
 	void *buffer;
+	AppJobQueue *q;
 
 	SetUnhandledExceptionFilter(win32_crash_handler);
 
@@ -33,15 +34,29 @@ Win32Main(int argc, s8 *argv)
 	win32_init_logger(&sysmem, 0xFF, 0xF);
 	atomic_test();
 	queue_test(&sysmem);
+	q = appjob_init_threadpool(&sysmem, 4, KB(16), KB(4));
 
+	queue_appjob_enqueue(q, test_fn1, 0, 0);
+	queue_appjob_enqueue(q, test_fn2, 0, 0);
+	queue_appjob_enqueue(q, test_fn3, 0, 0);
+
+	// Buffer
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
-	pd.os_write = Win32WriteFile;
-	pd.get_cpu_vendor = Win32CpuidGetVendor;
-	pd.std_out = (void*)GetStdHandle(STD_OUTPUT_HANDLE);
-	pd.run_app = 1;
-	pd.logsz = win32_logc;
-	pd.logs8 = win32_log;
+
+	// PFN
+	pd.os_write       = Win32WriteFile;
+	pd.cpuid_vendor   = Win32CpuidGetVendor;
+	pd.mlock_init     = mlock_init_mcslock;
+	pd.mlock_acquire  = mlock_acquire_mcslock;
+	pd.mlock_release  = mlock_release_mcslock;
+	pd.logsz          = win32_logc;
+	pd.logs8          = win32_log;
+
+	// Others
+	pd.tlock_terminal = &_glock_terminal;
+	pd.std_out        = (void*)GetStdHandle(STD_OUTPUT_HANDLE);
+	pd.run_app        = 1;
 
 	app_init(&pd);
 	while(pd.run_app) {
@@ -77,7 +92,7 @@ atomic_test()
 	assert(z == 1337, "Atomic Decrement has failed...");
 
 	x = 1337;
-	atomic_cmpxchg(&x, z, y);
+	atomic_cas(&x, z, y);
 	assert(x == y, "Atomic Compare & Exchange has failed...");
 }
 

@@ -1,6 +1,8 @@
 #include "nostd.h"
 
 global PlatformData *g_platform;
+global AppLock       tlock_terminal;
+global MArena        appmem;
 
 #if EXE_ARCH == 32
 	#define APP_USZ_VALUE 1234567890
@@ -13,10 +15,16 @@ global PlatformData *g_platform;
 export i32
 app_init(PlatformData *pd)
 {
-	g_platform = pd;
-	os_write   = g_platform->os_write;
-	logsz      = g_platform->logsz;
-	logs8      = g_platform->logs8;
+	g_platform     = pd;
+	os_write       = g_platform->os_write;
+	logsz          = g_platform->logsz;
+	logs8          = g_platform->logs8;
+	cpuid_vendor   = g_platform->cpuid_vendor;
+	mlock_init     = g_platform->mlock_init;
+	mlock_acquire  = g_platform->mlock_acquire;
+	mlock_release  = g_platform->mlock_release;
+	tlock_terminal = g_platform->tlock_terminal;
+	marena_init(&appmem, g_platform->bufapp.data, g_platform->bufapp.len, 8);
 
 	// Returning a positive or negative number acts as an error value.
 	return 0;
@@ -31,15 +39,19 @@ app_update()
 	f32 npi  = -3.14159265;
 	usz uval =  APP_USZ_VALUE;
 	isz ival =  APP_ISZ_VALUE;
-
-	char  cpuid_vendor[16];
+	AppMLock mlock;
 	char  randbuf[256];
 
-	fb.data = g_platform->bufapp.data;
-	fb.cap  = g_platform->bufapp.len;
+	fb.cap  = KB(4);
+	fb.data = marena_alloc(&appmem, fb.cap, word_size);
 	fb.fd   = g_platform->std_out;
 
+	// Setup Lock and Immediately Use
+	mlock = mlock_init(&appmem, tlock_terminal, 0);
+	mlock_acquire(mlock);
+
 	// Regular str -> fb
+
 	fb8_append(&fb, str);
 	fb8_append_lf(&fb);
 	fb8_append_lf(&fb);
@@ -89,8 +101,8 @@ app_update()
 
 	// CPUID (Provided by the Platform Layer.)
 	str = s8("CPUID Vendor: ");
-	g_platform->get_cpu_vendor((u8 *)&cpuid_vendor[0], 16);
-	fb8_append_cstr(&fb, &cpuid_vendor[0], 12);
+	cpuid_vendor((u8 *)&randbuf[0], 16);
+	fb8_append_cstr(&fb, &randbuf[0], 12);
 	fb8_append_lf(&fb);
 	fb8_append_lf(&fb);
 	fb8_flush(&fb);
@@ -148,6 +160,7 @@ app_update()
 	fb8_append_cstr(&fb, randbuf, 256);
 	fb8_append_lf(&fb);
 	fb8_flush(&fb);
+	mlock_release(mlock);
 
 	logc_debug("Debug: I am debugging the log defines.");
 	logc_info("We're inside libapp.c. "

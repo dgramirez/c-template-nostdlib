@@ -8,13 +8,10 @@ extern isz __atomic_asm_prefix
 atomic_load(void *ptr);
 
 extern isz __atomic_asm_prefix
-atomic_xadd(void *ptr, isz val);
+atomic_cas(void *ptr, isz old_val, isz new_val);
 
 extern isz __atomic_asm_prefix
-atomic_cmpxchg(void *ptr, isz old_val, isz new_val);
-
-extern isz __atomic_asm_prefix
-atomic_xchg64(void *ptr, isz val);
+atomic_swap(void *ptr, isz val);
 
 extern void __atomic_asm_prefix
 atomic_inc(void *ptr);
@@ -23,7 +20,7 @@ extern void __atomic_asm_prefix
 atomic_dec(void *ptr);
 
 extern void __atomic_asm_prefix
-mem_barrier();
+cpu_barrier();
 
 extern void __atomic_asm_prefix
 cpu_relax();

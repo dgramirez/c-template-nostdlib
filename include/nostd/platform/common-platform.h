@@ -15,14 +15,16 @@
 ////////////////////////////////////////
 // Common Assembly & Helper Functions //
 ////////////////////////////////////////
-#include "common/atomic.h"
+#include "common/atomics.h"
 #include "common/cpuid.h"
+#include "common/lock_mcs.h"
+#include "common/globals.h"
 
 ////////////////////////////////
 // Remaining Common Functions //
 ////////////////////////////////
-#include "common/mcs_lock.h"
-#include "common/queue_appjob.h"
+#include "common/appjob_queue.h"
+#include "common/appjob_threadpool.h"
 
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_PLATFORM_H
 
