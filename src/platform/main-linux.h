@@ -4,13 +4,13 @@
 #include "nostdp.h"
 
 local void
-mmm_donuts(void *arg, struct _thread_items *thread);
+mmm_donuts(void *arg, ThreadAppJobData *thread);
 
 local void
-mmm_cake(void *arg, struct _thread_items *thread);
+mmm_cake(void *arg, ThreadAppJobData *thread);
 
 local void
-mmm_pies(void *arg, struct _thread_items *thread);
+mmm_pies(void *arg, ThreadAppJobData *thread);
 
 local void
 print_fn_addresses(MArena *a);

@@ -57,7 +57,7 @@ linux_log(u32 level,
 	MCSLock me;
 	LogTime lt;
 
-	_mcs_lock(&lock, &me);
+	__mcs_lock(&lock, &me);
 
 	usz is_assert;
 	if (!_glog.flags_level || !_glog.flags_format)
@@ -202,7 +202,7 @@ linux_log(u32 level,
 
 		fb8_flush(&_glog.cb);
 	}
-	_mcs_unlock(&lock, &me);
+	__mcs_unlock(&lock, &me);
 }
 
 local void

@@ -18,7 +18,6 @@
 // Core Linux Assembly & Helper Functions //
 ////////////////////////////////////////////
 #include "linux/syscall.h"
-#include "linux/atomic.h"
 #include "linux/thread.h"
 #include "linux/helper_fn.h"
 
@@ -30,9 +29,6 @@
 ////////////////////////////////
 // Additional Linux Functions //
 ////////////////////////////////
-#include "linux/mcs_lock.h"
-#include "linux/threadpool_queue.h"
-#include "linux/threadpool.h"
 #include "linux/datetime.h"
 #include "linux/log.h"
 

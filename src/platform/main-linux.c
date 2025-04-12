@@ -8,7 +8,7 @@ main(int argc,
 	MArena sysmem;
 	struct timespec rest = {0};
 	void *buffer;
-	TpHandle tph;
+	TpAppHandle tph;
 
 	os_write = fb8_write;
 	logsz = linux_logc;
@@ -22,10 +22,10 @@ main(int argc,
 	print_fn_addresses(&sysmem);
 
 	unref(tph);
-	tph = linux_init_threadpool(&sysmem, 4, KB(32), KB(16));
-	linux_job_post(tph, mmm_donuts, 0, 0);
-	linux_job_post(tph, mmm_cake, 0, 0);
-	linux_job_post(tph, mmm_pies, 0, 0);
+	tph = appjob_init_threadpool(&sysmem, 4, KB(32), KB(16));
+	appjob_post(tph, mmm_donuts, 0, 0);
+	appjob_post(tph, mmm_cake, 0, 0);
+	appjob_post(tph, mmm_pies, 0, 0);
 
 	setup_shared_lib_app();
 	assert(app_init,   "Failed to get app_init from libapp.so");
@@ -35,7 +35,7 @@ main(int argc,
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
 	pd.os_write = fb8_write;
-	pd.get_cpu_vendor = linux_cpuid_getvendor;
+	pd.cpuid_vendor = linux_cpuid_getvendor;
 	pd.std_out = 0;
 	pd.run_app = 1;
 	pd.logsz  = logsz;
@@ -48,8 +48,8 @@ main(int argc,
 	}
 	app_close();
 
-	linux_job_wait(tph);
-	linux_job_quit(tph);
+//	linux_job_wait(tph);
+//	linux_job_quit(tph);
 	usz *_killme = 0;
 	*_killme = 0xDEADA55E;
 
@@ -96,19 +96,19 @@ setup_shared_lib_app()
 }
 
 local void
-mmm_donuts(void *arg, struct _thread_items *thread)
+mmm_donuts(void *arg, ThreadAppJobData *thread)
 {
 	logc_pass("Mmm Donuts...");
 }
 
 local void
-mmm_cake(void *arg, struct _thread_items *thread)
+mmm_cake(void *arg, ThreadAppJobData *thread)
 {
 	logc_odd("Mmm Cake...");
 }
 
 local void
-mmm_pies(void *arg, struct _thread_items *thread)
+mmm_pies(void *arg, ThreadAppJobData *thread)
 {
 	logc_warn("Mmm Pies...");
 }
@@ -128,20 +128,12 @@ print_fn_addresses(MArena *a)
 	fb8_append_hex(&fb, (usz)main);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("linux_tp_entry:      "));
-	fb8_append_hex(&fb, (usz)linux_tp_entry);
-	fb8_append_lf(&fb);
-
 	fb8_append(&fb, s8("mcs_lock:            "));
 	fb8_append_hex(&fb, (usz)mcs_lock);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("mcs_unlock:          "));
 	fb8_append_hex(&fb, (usz)mcs_unlock);
-	fb8_append_lf(&fb);
-
-	fb8_append(&fb, s8("queue_tpjob_dequeue: "));
-	fb8_append_hex(&fb, (usz)queue_tpjob_dequeue);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("atomic_load:         "));
@@ -180,12 +172,12 @@ print_fn_addresses(MArena *a)
 	fb8_append_hex(&fb, (usz)atomic_swap);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("_mcs_lock:           "));
-	fb8_append_hex(&fb, (usz)_mcs_lock);
+	fb8_append(&fb, s8("__mcs_lock:           "));
+	fb8_append_hex(&fb, (usz)__mcs_lock);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("_mcs_unlock:         "));
-	fb8_append_hex(&fb, (usz)_mcs_unlock);
+	fb8_append(&fb, s8("__mcs_unlock:         "));
+	fb8_append_hex(&fb, (usz)__mcs_unlock);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("linux_log:           "));

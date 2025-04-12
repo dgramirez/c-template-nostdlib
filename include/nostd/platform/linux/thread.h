@@ -10,10 +10,11 @@
    } TpStack;
 */
 
+
 local long
-futex_wait(u32 *futex, u32 expected)
+futex_wait(u32 *addr, u32 expected)
 {
-	return sys_futex((u32 *)futex, FUTEX_WAIT, expected, 0, 0, 0);
+	return sys_futex(addr, FUTEX_WAIT, expected, 0, 0, 0);
 }
 
 local long
