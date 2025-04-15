@@ -128,8 +128,8 @@ linux_job_post(TpHandle tphandle,
 	if (!hjob)
 		return 0;
 
-	if (atomic_load(tpstack->futex_jobpost) == 0) {
-		atomic_store(tpstack->futex_jobpost, 1);
+	if (atomic_load32(tpstack->futex_jobpost) == 0) {
+		atomic_store32(tpstack->futex_jobpost, 1);
 		futex_wake(tpstack->futex_jobpost, 1);
 	}
 
@@ -155,8 +155,8 @@ linux_job_quit(TpHandle tphandle)
 	s = (TpStack *)tphandle;
 
 	atomic_store(s->quit, 1);
-	atomic_store(s->futex_jobpost, 1);
-	futex_wake(s->futex_jobpost, (u32)-1);
+	atomic_store32(s->futex_jobpost, 1);
+	futex_wake_all(s->futex_jobpost);
 }
 
 local void
@@ -165,7 +165,7 @@ linux_tp_entry(TpStack *s)
 	// Variable Section
 	MArenaTemp tmp;
 	fb8 fb = {0};
-	TpJobNode *job;
+	TpJobNode job;
 	int spin;
 
 	// Loop
@@ -187,7 +187,7 @@ linux_tp_entry(TpStack *s)
 
 			spin = 300;
 			if (spin-- <= 0) {
-				atomic_store(s->futex_jobpost, 0);
+				atomic_store32(s->futex_jobpost, 0);
 				futex_wait(s->futex_jobpost, 0);
 			}
 			else
@@ -199,19 +199,20 @@ linux_tp_entry(TpStack *s)
 			break;
 
 		// Get Job
-		queue_tpjob_dequeue(s->queue, &job);
+		queue_tpjob_dequeue(s->queue, job);
 		atomic_inc(s->work_count);
 
 		// Do Job
-		if (job) job->fn(job->args, &s->thread_items);
+		if (job.fn) job.fn(job.args, &s->thread_items);
 		atomic_dec(s->work_count);
 
 		// Free Job
 		mcs_lock(&s->thread_items.mtx);
-		mpool_free(s->queue->pool, job);
-		if (atomic_load(s->queue->futex_jobavail) == 0) {
-			atomic_store(s->queue->futex_jobavail, 1);
-			futex_wake(s->queue->futex_jobavail, 1);
+		if (job.fn) {
+			if (atomic_load(s->queue->futex_jobavail) == 0) {
+				atomic_store(s->queue->futex_jobavail, 1);
+				futex_wake(s->queue->futex_jobavail, 1);
+			}
 		}
 		mcs_unlock(&s->thread_items.mtx);
 	} while (1);

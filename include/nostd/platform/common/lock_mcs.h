@@ -46,11 +46,11 @@ __mcs_lock(MCSLock *lock, MCSLock *me)
 	int spin;
 
 	atomic_store(&me->next, 0);
-	atomic_store(&me->locked, 0);
+	atomic_store32(&me->locked, 0);
 
 	pred = (MCSLock *)atomic_swap(lock, (isz)me);
 	if (pred) {
-		atomic_store(&me->locked, 1);
+		atomic_store32(&me->locked, 1);
 		atomic_store(&pred->next, (isz)me);
 		spin = 300;
 		while (me->locked) {
@@ -76,12 +76,12 @@ __mcs_unlock(MCSLock *lock, MCSLock *me)
 		} while (!me->next);
 	}
 
-	if (atomic_load(&me->next->locked) == 1) {
-		atomic_store(&me->next->locked, 0);
+	if (atomic_load32(&me->next->locked) == 1) {
+		atomic_store32(&me->next->locked, 0);
 		__thread_wake_one(&me->next->locked);
 	}
 	else
-		atomic_store(&me->next->locked, 0);
+		atomic_store32(&me->next->locked, 0);
 }
 
 local void

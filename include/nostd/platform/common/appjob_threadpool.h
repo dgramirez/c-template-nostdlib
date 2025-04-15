@@ -12,13 +12,12 @@ typedef struct _tp_stack {
 	AppJobQueue      *queue;
 	usz              *work_count;
 	usz              *quit;
-	u32              *addr_jobpost;
 } TpAppStack;
 
 ////////////////
 // Prototypes //
 ////////////////
-local AppJobQueue *
+local TpAppStack *
 appjob_init_threadpool(MArena *sysmem,
                        usz     threads,
                        usz     stack_size,
@@ -33,10 +32,16 @@ appjob_post(TpAppHandle  tp,
 local __thread_return __stdcall
 appjob_thread_entry(TpAppStack *s);
 
+local void
+appjob_wait(TpAppHandle tp);
+
+local void
+appjob_quit(TpAppHandle tp);
+
 /////////////////
 // Definitions //
 /////////////////
-local AppJobQueue *
+local TpAppStack *
 appjob_init_threadpool(MArena *sysmem,
                        usz     threads,
                        usz     stack_size,
@@ -54,6 +59,7 @@ appjob_init_threadpool(MArena *sysmem,
 	isz            pool_buffer_size;
 	usz            allocated;
 	usz            i;
+	int            max_queue;
 
 	if (!temp_size)
 		return 0;
@@ -88,8 +94,9 @@ appjob_init_threadpool(MArena *sysmem,
 	           8);
 
 	queue_appjob_init(shared_queue,
-	                    shared_queue_pool,
-	                    shared_addr_jobavail);
+	                  shared_queue_pool,
+	                  shared_addr_jobavail,
+	                  shared_addr_jobpost);
 
 	for (i = 0; i < threads; ++i) {
 		thread_stack = marena_alloc(sysmem, stack_size, page_size);
@@ -100,8 +107,8 @@ appjob_init_threadpool(MArena *sysmem,
 		//       an argument.
 		#ifdef __linux__
 		thread_stack = (TpAppStack *)((u8*)thread_stack +
-		                           stack_size -
-		                           sizeof(TpAppStack));
+		                                   stack_size -
+		                                   sizeof(TpAppStack));
 		#endif
 
 		marena_init(&thread_stack->tdata.tmp,
@@ -109,17 +116,24 @@ appjob_init_threadpool(MArena *sysmem,
 		            temp_size,
 		            8);
 
+		max_queue = (pool_buffer_size / threads) - 1;
+		thread_stack->tdata.q_retired_max     = max_queue;
+		thread_stack->tdata.q_retired_nodes   =
+			marena_alloc(sysmem,
+			             max_queue * sizeof(AppJobNode *),
+		                 page_size);
+		thread_stack->tdata.q_retired_current = 0;
+
 		thread_stack->tdata.mtx.lock        = shared_lock;
 		thread_stack->queue                 = shared_queue;
 		thread_stack->work_count            = shared_work_count;
 		thread_stack->quit                  = shared_quit;
-		thread_stack->addr_jobpost          = shared_addr_jobpost;
 
 		thread_stack->entry = appjob_thread_entry;
 		__thread_create(appjob_thread_entry, thread_stack, stack_size);
 	}
 
-	return shared_queue;
+	return thread_stack;
 }
 
 local HAppJob
@@ -136,9 +150,9 @@ appjob_post(TpAppHandle   tphandle,
 	if (!hjob)
 		return 0;
 
-	if (atomic_load(tpstack->addr_jobpost) == 0) {
-		atomic_store(tpstack->addr_jobpost, 1);
-		__thread_wake_one(tpstack->addr_jobpost);
+	if (atomic_load(tpstack->queue->addr_jobavail) == 0) {
+		atomic_store32(tpstack->queue->addr_jobavail, 1);
+		__thread_wake_one(tpstack->queue->addr_jobavail);
 	}
 
 	return hjob;
@@ -162,9 +176,9 @@ appjob_quit(TpAppHandle tphandle)
 	TpAppStack *s;
 	s = (TpAppStack *)tphandle;
 
-	atomic_store(s->quit, 1);
-	atomic_store(s->addr_jobpost, 1);
-	__thread_wake_all(s->addr_jobpost);
+	atomic_store32(s->quit, 1);
+	atomic_store32(s->queue->addr_jobposted, 1);
+	__thread_wake_all(s->queue->addr_jobposted);
 }
 
 local __thread_return __stdcall
@@ -174,6 +188,8 @@ appjob_thread_entry(TpAppStack *s)
 	MArenaTemp tmp;
 	fb8 fb = {0};
 	AppJobNode *job;
+	AppJobFn job_fn;
+	void *job_args;
 	int spin;
 
 	// Loop
@@ -189,14 +205,15 @@ appjob_thread_entry(TpAppStack *s)
 	marena_load(&tmp);
 	do {
 		// Wait for Job
-		while (atomic_load(&s->queue->head.ptr) == 0) {
+		spin = 300;
+		while (atomic_load(&s->queue->head.ptr->next.ptr) == 0) {
 			if (atomic_load(s->quit))
 				break;
 
-			spin = 300;
 			if (spin-- <= 0) {
-				atomic_store(s->addr_jobpost, 0);
-				__thread_wait(s->addr_jobpost, 0);
+				logc_debug("Attempting to sleep...");
+				atomic_store32(s->queue->addr_jobposted, 0);
+				__thread_wait(s->queue->addr_jobposted, 0);
 			}
 			else
 				cpu_relax();
@@ -207,19 +224,28 @@ appjob_thread_entry(TpAppStack *s)
 			break;
 
 		// Get Job
+		mcs_lock(&s->tdata.mtx);
 		queue_appjob_dequeue(s->queue, &job);
 		atomic_inc(s->work_count);
+		mcs_unlock(&s->tdata.mtx);
 
 		// Do Job
-		if (job) job->fn(job->args, &s->tdata);
+		if (job->fn) {
+			job_fn = job->fn;
+			job_args = job->args;
+			queue_appjob_retire(s->queue->pool, job, &s->tdata);
+
+			job_fn(job_args, &s->tdata);
+		}
 		atomic_dec(s->work_count);
 
 		// Free Job
 		mcs_lock(&s->tdata.mtx);
-		mpool_free(s->queue->pool, job);
-		if (atomic_load(s->queue->addr_jobavail) == 0) {
-			atomic_store(s->queue->addr_jobavail, 1);
-			__thread_wake_one(s->queue->addr_jobavail);
+		if (job->fn) {
+			if (atomic_load(s->queue->addr_jobavail) == 0) {
+				atomic_store(s->queue->addr_jobavail, 1);
+				__thread_wake_one(s->queue->addr_jobavail);
+			}
 		}
 		mcs_unlock(&s->tdata.mtx);
 	} while (1);

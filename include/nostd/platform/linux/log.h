@@ -53,11 +53,10 @@ linux_log(u32 level,
           usz linenum,
           const char *fnname)
 {
-	sticky MCSLock lock;
 	MCSLock me;
 	LogTime lt;
 
-	__mcs_lock(&lock, &me);
+	__mcs_lock(&_glock_terminal, &me);
 
 	usz is_assert;
 	if (!_glog.flags_level || !_glog.flags_format)
@@ -202,7 +201,7 @@ linux_log(u32 level,
 
 		fb8_flush(&_glog.cb);
 	}
-	__mcs_unlock(&lock, &me);
+	__mcs_unlock(&_glock_terminal, &me);
 }
 
 local void

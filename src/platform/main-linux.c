@@ -1,5 +1,10 @@
 #include "main-linux.h"
 
+typedef struct _node_ptr_t {
+	struct _node_ptr_t *next;
+	usz count;
+} pointer_t;
+
 int
 main(int argc,
      char **argv)
@@ -21,7 +26,6 @@ main(int argc,
 
 	print_fn_addresses(&sysmem);
 
-	unref(tph);
 	tph = appjob_init_threadpool(&sysmem, 4, KB(32), KB(16));
 	appjob_post(tph, mmm_donuts, 0, 0);
 	appjob_post(tph, mmm_cake, 0, 0);
@@ -32,24 +36,37 @@ main(int argc,
 	assert(app_update, "Failed to get app_update from libapp.so");
 	assert(app_close,  "Failed to get app_close from libapp.so");
 
+	// Buffer
 	pd.bufapp.len  = MB(16);
 	pd.bufapp.data = marena_alloc(&sysmem, pd.bufapp.len, page_size);
-	pd.os_write = fb8_write;
-	pd.cpuid_vendor = linux_cpuid_getvendor;
+
+	// PFN
+	pd.os_write       = fb8_write;
+	pd.cpuid_vendor   = linux_cpuid_getvendor;
+	pd.mlock_init     = (PFN_mlock_init)mlock_init_mcslock;
+	pd.mlock_acquire  = (PFN_mlock_acquire)mlock_acquire_mcslock;
+	pd.mlock_release  = (PFN_mlock_release)mlock_release_mcslock;
+	pd.logsz          = logsz;
+	pd.logs8          = logs8;
+	pd.tp_post        = (PFN_tp_post)appjob_post;
+	pd.tp_quit        = (PFN_tp_quit)appjob_quit;
+	pd.tp_wait_all    = (PFN_tp_wait_all)appjob_wait;
+
+	// Others
+	pd.tlock_terminal = &_glock_terminal;
+	pd.tp_data        = tph;
 	pd.std_out = 0;
 	pd.run_app = 1;
-	pd.logsz  = logsz;
 
 	app_init(&pd);
 	rest.tv_sec = 5;
 	while (pd.run_app) {
-		app_update(&pd);
 		sys_nanosleep(&rest, 0);
+		app_update(&pd);
 	}
 	app_close();
 
-//	linux_job_wait(tph);
-//	linux_job_quit(tph);
+	appjob_wait(tph);
 	usz *_killme = 0;
 	*_killme = 0xDEADA55E;
 
@@ -202,5 +219,11 @@ print_fn_addresses(MArena *a)
 
 	log_debug(fb.b);
 	marena_load(&at);
+
+	pointer_t test = {(pointer_t *)0xDEADBEEF, 32};
+	pointer_t test2;
+	pointer_t test3 = {(pointer_t *)0xC001BABE, 64};
+	atomic_store128(&test2, &test);
+	atomic_cas128((void*)&test, (void*)&test2, (void*)&test3);
 }
 

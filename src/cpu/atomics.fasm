@@ -1,3 +1,8 @@
+section '.bss' writeable
+	atomic_store128_lock dq 0
+	atomic_cas128_lock dq 0
+
+section '.text' executable align 16
 match =LINUX, PLATFORM {
 	; void atomic_store(void *ptr, isz val)
 	public atomic_store
@@ -6,6 +11,39 @@ match =LINUX, PLATFORM {
 
 		mov [rdi], rsi
 		sfence
+		ret
+
+	; void atomic_store32(void *ptr, isz val)
+	public atomic_store32
+	atomic_store32:
+		use32
+
+		mov [edi], esi
+		sfence
+		ret
+
+	; void atomic_store128(void *ptr, void *val)
+	public atomic_store128
+	atomic_store128:
+		use64
+
+		pushq [rsi]
+		pushq [rsi+8]
+
+		; SPINLOCK
+		.spinlock_wait_store128:
+		lea r8, [atomic_store128_lock]
+		xor rax, rax
+		mov rcx, 1
+		lock cmpxchg [r8], rcx
+		jnz .spinlock_wait_store128
+
+		; CRITICAL SECTION
+		popq [rdi+8]
+		popq [rdi]
+
+		; RELEASE LOCK
+		mov qword [r8], 0
 		ret
 
 	; isz atomic_load(void *ptr)
@@ -17,6 +55,15 @@ match =LINUX, PLATFORM {
 		mov rax, [rdi]
 		ret
 
+	; isz atomic_load32(void *ptr)
+	public atomic_load32
+	atomic_load32:
+		use32
+
+		lfence
+		mov eax, [edi]
+		ret
+
 	; isz atomic_cas(void *ptr, isz old_val, isz new_val)
 	public atomic_cas
 	atomic_cas:
@@ -25,6 +72,43 @@ match =LINUX, PLATFORM {
 		; Compare and Swap
 		mov rax, rsi
 		lock cmpxchg [rdi], rdx
+		ret
+
+	; isz atomic_cas128(void *ptr, void *old_val, void *new_val)
+	public atomic_cas128
+	atomic_cas128:
+		use64
+
+		pushq [rdx+8]
+		pushq [rdx]
+
+		; SPINLOCK
+		.spinlock_wait_cas128:
+		lea r8, [atomic_cas128_lock]
+		xor rax, rax
+		mov rcx, 1
+		lock cmpxchg [r8], rcx
+		jnz .spinlock_wait_cas128
+
+		; CRITICAL SECTION
+		mov rax, [rsi]
+		popq rcx
+		cmpxchg [rdi], rcx
+		jnz .cas128_fail
+
+		mov rax, [rsi+8]
+		pop rcx
+		cmpxchg [rdi+8], rcx
+		jnz .cas128_fail
+
+		; RELEASE LOCK
+		mov qword [r8], 0
+		mov rax, 1
+		ret
+
+		.cas128_fail:
+		mov qword [r8], 0
+		mov rax, 0
 		ret
 
 	; isz atomic_swap(void *ptr, isz val)

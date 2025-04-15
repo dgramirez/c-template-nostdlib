@@ -26,9 +26,13 @@ typedef struct {
 	PFN_mlock_init    mlock_init;
 	PFN_mlock_acquire mlock_acquire;
 	PFN_mlock_release mlock_release;
+	PFN_tp_post       tp_post;
+	PFN_tp_wait_all   tp_wait_all;
+	PFN_tp_quit       tp_quit;
 	AppLock           tlock_terminal;
 	FdStdOut          std_out;
 	i32               run_app;
+	TPData            tp_data;
 } PlatformData;
 
 #ifdef _MSC_VER

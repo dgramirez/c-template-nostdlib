@@ -1,38 +1,9 @@
-#include "nostd.h"
-
-global PlatformData *g_platform;
-global AppLock       tlock_terminal;
-global MArena        appmem;
-
-#if EXE_ARCH == 32
-	#define APP_USZ_VALUE 1234567890
-	#define APP_ISZ_VALUE -1876543290
-#else
-	#define APP_USZ_VALUE 12345678901234567
-	#define APP_ISZ_VALUE -9876543210987654
-#endif
-
-export i32
-app_init(PlatformData *pd)
-{
-	g_platform     = pd;
-	os_write       = g_platform->os_write;
-	logsz          = g_platform->logsz;
-	logs8          = g_platform->logs8;
-	cpuid_vendor   = g_platform->cpuid_vendor;
-	mlock_init     = g_platform->mlock_init;
-	mlock_acquire  = g_platform->mlock_acquire;
-	mlock_release  = g_platform->mlock_release;
-	tlock_terminal = g_platform->tlock_terminal;
-	marena_init(&appmem, g_platform->bufapp.data, g_platform->bufapp.len, 8);
-
-	// Returning a positive or negative number acts as an error value.
-	return 0;
-}
+#include "libapp.h"
 
 export i32
 app_update()
 {
+	char  randbuf[256];
 	s8  str  =  s8("Hello, World!\n");
 	fb8 fb   =  {0};
 	f32 pi   =  3.14159265;
@@ -40,11 +11,150 @@ app_update()
 	usz uval =  APP_USZ_VALUE;
 	isz ival =  APP_ISZ_VALUE;
 	AppMLock mlock;
-	char  randbuf[256];
+	TPData tp_data;
 
 	fb.cap  = KB(4);
 	fb.data = marena_alloc(&appmem, fb.cap, word_size);
 	fb.fd   = g_platform->std_out;
+	tp_data = g_platform->tp_data;
+
+	// Add log functions into threadpool
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
+	tp_post(tp_data, show_log_debug, 0, 0);
+	tp_post(tp_data, show_log_info, 0, 0);
+	tp_post(tp_data, show_log_pass, 0, 0);
+	tp_post(tp_data, show_log_odd, 0, 0);
+	tp_post(tp_data, show_log_warn, 0, 0);
+	tp_post(tp_data, show_log_error, 0, 0);
+	tp_post(tp_data, show_log_fatal, 0, 0);
+	tp_post(tp_data, show_log_egg, 0, 0);
 
 	// Setup Lock and Immediately Use
 	mlock = mlock_init(&appmem, tlock_terminal, 0);
@@ -162,24 +272,6 @@ app_update()
 	fb8_flush(&fb);
 	mlock_release(mlock);
 
-	logc_debug("Debug: I am debugging the log defines.");
-	logc_info("We're inside libapp.c. "
-	          "This is the application portion of this project!");
-	logc_pass("And so far, log_debug and log_info has passed!");
-	logc_odd("However, its kinda weird that I'm logging at different "
-	         "levels. Of course its a test but you don't do this normally.");
-	logc_warn("So a warning: We will see two errors occur. "
-	          "Only here, would the errors not truly matter!");
-	logc_error("I'm an error, but not the one that would force a close on "
-	           "your application.");
-	logc_fatal("I'm the fatal error. By myself, I am like the regular "
-	           "logc_error. However, Devs should terminate the program once "
-	           "I have been used! In the end, its totally up to them.");
-	logc_egg("And I'm an Easter Egg! or Dev Notes... Or whatever they want "
-	         "me to be. If I am supposed to be useful, I should be in "
-	         "logc_info. This is just meant for cool or fun info the devs "
-	         "want to show out.");
-
 	// Finish with the application (Not doing this will have the app run
 	// Continually, which may be ideal for a simple protocol client.)
 	g_platform->run_app = 0;
@@ -193,5 +285,26 @@ app_close()
 {
 	g_platform->run_app = 0;
 	// Going to be a stub for the meantime.
+}
+
+export i32
+app_init(PlatformData *pd)
+{
+	g_platform      = pd;
+	os_write        = g_platform->os_write;
+	logsz           = g_platform->logsz;
+	logs8           = g_platform->logs8;
+	cpuid_vendor    = g_platform->cpuid_vendor;
+	mlock_init      = g_platform->mlock_init;
+	mlock_acquire   = g_platform->mlock_acquire;
+	mlock_release   = g_platform->mlock_release;
+	tlock_terminal  = g_platform->tlock_terminal;
+	tp_post         = g_platform->tp_post;
+	tp_quit         = g_platform->tp_quit;
+	tp_wait_all     = g_platform->tp_wait_all;
+	marena_init(&appmem, g_platform->bufapp.data, g_platform->bufapp.len, 8);
+
+	// Returning a positive or negative number acts as an error value.
+	return 0;
 }
 
