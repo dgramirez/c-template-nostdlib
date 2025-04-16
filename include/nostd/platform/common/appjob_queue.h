@@ -30,7 +30,7 @@ typedef struct _app_job_ptr {
 	(!(x.ptr == y.ptr || x.count == y.count))
 
 #define AppJobPtr_Swap(p, o, n) \
-	atomic_cas128(p, o, n)
+	_afn_atcasD(p, o, n)
 
 typedef struct _app_job_node {
 	AppJobFn   fn;
@@ -84,7 +84,7 @@ queue_appjob_enqueue(AppJobQueue *q,
 		if (flag_has(flags, TP_POST_EXIT_IF_FAILED))
 			return (HAppJob)0;
 
-		atomic_store32(q->addr_jobavail, 0);
+		_afn_atstoreI(q->addr_jobavail, 0);
 		__thread_wait(q->addr_jobavail, 0);
 	}
 
@@ -117,8 +117,8 @@ queue_appjob_enqueue(AppJobQueue *q,
 	new_tail.count = tail.count + 1;
 	AppJobPtr_Swap(&q->tail, &tail, &new_tail);
 
-	if (!atomic_load32(q->addr_jobposted)) {
-		atomic_store32(q->addr_jobposted, 1);
+	if (!_afn_atloadI(q->addr_jobposted)) {
+		_afn_atstoreI(q->addr_jobposted, 1);
 		__thread_wake_one(q->addr_jobposted);
 	}
 

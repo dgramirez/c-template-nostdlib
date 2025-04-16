@@ -1,30 +1,76 @@
+; Notes: Some Enforcements:
+;   Name Enforcements:
+;       - [_afn_]foo[B]
+;       - Prefix: _afn_ (Public Assembly Function)
+;       - foo           (Function Descriptor)
+;       - Suffix: B     (Byte Type)
+;           - Optional. Only useful if it improves function descriptor.
+;
+;   Byte Type:
+;       [B]yte:    8 bytes
+;       [S]hort:  16 bytes
+;       [I]nt:    32 bytes
+;       [L]ong:   64 bytes
+;       [X]MM:   128 bytes
+;       [Y]MM:   256 bytes
+;       [Z]MM:   512 bytes
+;
+;       NOTE: Don't mix this up with the Window's Conventions!
+;             This is in the perspective of the architecture, not platform!
+;             eg. MS's DWORD == 32 bytes, but on x86_64 its 64 bytes!
+;       [H]Word: Half Word Size   (16 -> x86)
+;                                 (32 -> x86_64)
+;
+;       [W]ord:  Word Size        (32 -> x86)
+;                                 (64 -> x86_64)
+;
+;       [D]Word: Double Word Size (64  -> x86
+;                                 (128 -> x86_64)
+;
+;       [Q]Word: Quad Word Size   (128 -> x86)
+;                                 (256 -> x86_64)
+;   Calling Convention Reminder:
+;       Linux x86_64:
+;           - rdi    rsi
+;           - rdx    rcx
+;           -  r8     r9
+;
+;           - rcx -> r10 (Linux Syscalls Only)
+;       Windows x86_64:
+;           - rcx    rdx
+;           -  r8     r9
+;       Windows x86 [__fastcall]:
+;           - ecx    edx
+;           - [esp+(1+2)*4]
+;           - [esp+(2+2)*4]
+
 section '.bss' writeable
-	atomic_store128_lock dq 0
-	atomic_cas128_lock dq 0
+	_afn_atstoreDW_lock dq 0
+	_afn_atcasD_lock dq 0
 
 section '.text' executable align 16
 match =LINUX, PLATFORM {
-	; void atomic_store(void *ptr, isz val)
-	public atomic_store
-	atomic_store:
+	; void _afn_atstoreW(void *ptr, isz val)
+	public _afn_atstoreW
+	_afn_atstoreW:
 		use64
 
 		mov [rdi], rsi
 		sfence
 		ret
 
-	; void atomic_store32(void *ptr, isz val)
-	public atomic_store32
-	atomic_store32:
+	; void _afn_atstoreI(void *ptr, isz val)
+	public _afn_atstoreI
+	_afn_atstoreI:
 		use32
 
 		mov [edi], esi
 		sfence
 		ret
 
-	; void atomic_store128(void *ptr, void *val)
-	public atomic_store128
-	atomic_store128:
+	; void _afn_atstoreD(void *ptr, void *val)
+	public _afn_atstoreD
+	_afn_atstoreD:
 		use64
 
 		pushq [rsi]
@@ -32,7 +78,7 @@ match =LINUX, PLATFORM {
 
 		; SPINLOCK
 		.spinlock_wait_store128:
-		lea r8, [atomic_store128_lock]
+		lea r8, [_afn_atstoreDW_lock]
 		xor rax, rax
 		mov rcx, 1
 		lock cmpxchg [r8], rcx
@@ -46,27 +92,27 @@ match =LINUX, PLATFORM {
 		mov qword [r8], 0
 		ret
 
-	; isz atomic_load(void *ptr)
-	public atomic_load
-	atomic_load:
+	; isz _afn_atloadW(void *ptr)
+	public _afn_atloadW
+	_afn_atloadW:
 		use64
 
 		lfence
 		mov rax, [rdi]
 		ret
 
-	; isz atomic_load32(void *ptr)
-	public atomic_load32
-	atomic_load32:
+	; isz _afn_atloadI(void *ptr)
+	public _afn_atloadI
+	_afn_atloadI:
 		use32
 
 		lfence
 		mov eax, [edi]
 		ret
 
-	; isz atomic_cas(void *ptr, isz old_val, isz new_val)
-	public atomic_cas
-	atomic_cas:
+	; isz _afn_atcasW(void *ptr, isz old_val, isz new_val)
+	public _afn_atcasW
+	_afn_atcasW:
 		use64
 
 		; Compare and Swap
@@ -74,9 +120,9 @@ match =LINUX, PLATFORM {
 		lock cmpxchg [rdi], rdx
 		ret
 
-	; isz atomic_cas128(void *ptr, void *old_val, void *new_val)
-	public atomic_cas128
-	atomic_cas128:
+	; isz _afn_atcasD(void *ptr, void *old_val, void *new_val)
+	public _afn_atcasD
+	_afn_atcasD:
 		use64
 
 		pushq [rdx+8]
@@ -84,7 +130,7 @@ match =LINUX, PLATFORM {
 
 		; SPINLOCK
 		.spinlock_wait_cas128:
-		lea r8, [atomic_cas128_lock]
+		lea r8, [_afn_atcasD_lock]
 		xor rax, rax
 		mov rcx, 1
 		lock cmpxchg [r8], rcx
@@ -111,9 +157,9 @@ match =LINUX, PLATFORM {
 		mov rax, 0
 		ret
 
-	; isz atomic_swap(void *ptr, isz val)
-	public atomic_swap
-	atomic_swap:
+	; isz _afn_atswapW(void *ptr, isz val)
+	public _afn_atswapW
+	_afn_atswapW:
 		use64
 
 		; Swap
@@ -121,109 +167,71 @@ match =LINUX, PLATFORM {
 		lock xchg [rdi], rax
 		ret
 
-	; void atomic_inc(void *ptr)
-	public atomic_inc
-	atomic_inc:
+	; void _afn_atincW(void *ptr)
+	public _afn_atincW
+	_afn_atincW:
 		use64
 
 		; Add and Fetch
 		lock add [rdi], WORD 1
 		ret
 
-	; void atomic_dec(void *ptr)
-	public atomic_dec
-	atomic_dec:
+	; void _afn_atdecW(void *ptr)
+	public _afn_atdecW
+	_afn_atdecW:
 		use64
 
 		; Add and Fetch
 		lock add [rdi], WORD -1
 		ret
 
-	; void atomic_add(void *ptr, void *val)
-	public atomic_add
-	atomic_add:
-		use64
-
-		; Add and Fetch
-		lock add [rdi], rsi
-		ret
-
-	; void atomic_bit_set(void *ptr, void *val)
-	public atomic_bit_set
-	atomic_bit_set:
-		use64
-
-		; Or and Fetch
-		lock or [rdi], rsi
-		ret
-
-	; void atomic_bit_clear(void *ptr, void *val)
-	public atomic_bit_clear
-	atomic_bit_clear:
-		use64
-
-		; And and Fetch
-		not rsi
-		lock and [rdi], rsi
-		ret
-
-	; void load_barrier()
-	public load_barrier
-	load_barrier:
+	; void _afn_lfence()
+	public _afn_lfence
+	_afn_lfence:
 		lfence
 		ret
 
-	; void store_barrier()
-	public store_barrier
-	store_barrier:
+	; void _afn_sfence()
+	public _afn_sfence
+	_afn_sfence:
 		sfence
 		ret
 
-	; void cpu_barrier()
-	public cpu_barrier
-	cpu_barrier:
+	; void _afn_mfence()
+	public _afn_mfence
+	_afn_mfence:
 		mfence
 		ret
 
-	; void cpu_relax()
-	public cpu_relax
-	cpu_relax:
+	; void _afn_cpurelax()
+	public _afn_cpurelax
+	_afn_cpurelax:
 		pause
 		ret
 }
 
 match =WIN64, PLATFORM {
-	; void atomic_store(void *ptr, isz val)
-	public atomic_store
-	atomic_store:
+	; void _afn_atstoreW(void *ptr, isz val)
+	public _afn_atstoreW
+	_afn_atstoreW:
 		use64
 
 		mov [rcx], rdx
 		sfence
 		ret
 
-	; isz atomic_load(void *ptr)
-	public atomic_load
-	atomic_load:
+	; isz _afn_atloadW(void *ptr)
+	public _afn_atloadW
+	_afn_atloadW:
 		use64
 
 		lfence
 		mov rax, [rcx]
 		ret
 
-	; isz atomic_xadd(void *ptr, isz val)
-	public atomic_xadd
-	atomic_xadd:
-		use64
-
-		; Fetch And Add
-		mov rax, rdx
-		lock xadd [rcx], rax
-		ret
-
-	; isz atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-	public atomic_cas
-	atomic_cas:
+	; isz _afn_atcasW(void *ptr, isz old_val, isz new_val)
+	public _afn_atcasW
+	_afn_atcasW:
 		use64
 
 		; Compare and Swap
@@ -231,9 +239,9 @@ match =WIN64, PLATFORM {
 		lock cmpxchg [rcx], r8
 		ret
 
-	; isz atomic_swap(void *ptr, isz val)
-	public atomic_swap
-	atomic_swap:
+	; isz _afn_atswapW(void *ptr, isz val)
+	public _afn_atswapW
+	_afn_atswapW:
 		use64
 
 		; Swap
@@ -241,109 +249,71 @@ match =WIN64, PLATFORM {
 		lock xchg [rcx], rax
 		ret
 
-	; void atomic_inc(void *ptr)
-	public atomic_inc
-	atomic_inc:
+	; void _afn_atincW(void *ptr)
+	public _afn_atincW
+	_afn_atincW:
 		use64
 
 		; Add and Fetch
 		lock add [rcx], WORD 1
 		ret
 
-	; void atomic_dec(void *ptr)
-	public atomic_dec
-	atomic_dec:
+	; void _afn_atdecW(void *ptr)
+	public _afn_atdecW
+	_afn_atdecW:
 		use64
 
 		; Add and Fetch
 		lock add [rcx], WORD -1
 		ret
 
-	; void atomic_add(void *ptr, void *val)
-	public atomic_add
-	atomic_add:
-		use64
-
-		; Add and Fetch
-		lock add [rcx], rdx
-		ret
-
-	; void atomic_bit_set(void *ptr, void *val)
-	public atomic_bit_set
-	atomic_bit_set:
-		use64
-
-		; Or and Fetch
-		lock or [rcx], rdx
-		ret
-
-	; void atomic_bit_clear(void *ptr, void *val)
-	public atomic_bit_clear
-	atomic_bit_clear:
-		use64
-
-		; And and Fetch
-		not rdx
-		lock and [rcx], rdx
-		ret
-
-	; void load_barrier()
-	public load_barrier
-	load_barrier:
+	; void _afn_lfence()
+	public _afn_lfence
+	_afn_lfence:
 		lfence
 		ret
 
-	; void store_barrier()
-	public store_barrier
-	store_barrier:
+	; void _afn_sfence()
+	public _afn_sfence
+	_afn_sfence:
 		sfence
 		ret
 
-	; void cpu_barrier()
-	public cpu_barrier
-	cpu_barrier:
+	; void _afn_mfence()
+	public _afn_mfence
+	_afn_mfence:
 		mfence
 		ret
 
-	; void cpu_relax()
-	public cpu_relax
-	cpu_relax:
+	; void _afn_cpurelax()
+	public _afn_cpurelax
+	_afn_cpurelax:
 		pause
 		ret
 }
 
 match =WIN32, PLATFORM {
-	; void __fastcall atomic_store(void *ptr, isz val)
-	public atomic_store as '@atomic_store@8'
-	atomic_store:
+	; void __fastcall _afn_atstoreW(void *ptr, isz val)
+	public _afn_atstoreW as '@_afn_atstoreW@8'
+	_afn_atstoreW:
 		use32
 
 		mov [ecx], edx
 		sfence
 		ret
 
-	; isz __fastcall atomic_load(void *ptr)
-	public atomic_load as '@atomic_load@4'
-	atomic_load:
+	; isz __fastcall _afn_atloadW(void *ptr)
+	public _afn_atloadW as '@_afn_atloadW@4'
+	_afn_atloadW:
 		use32
 
 		lfence
 		mov eax, [ecx]
 		ret
 
-	; isz __fastcall atomic_add(void *ptr, isz val)
-	public atomic_xadd as '@atomic_xadd@8'
-	atomic_xadd:
-		use32
-
-		; Fetch And Add
-		mov eax, edx
-		lock xadd [ecx], eax
-		ret
-
-	; isz __fastcall atomic_xmpxchg(void *ptr, isz old_val, isz new_val)
-	public atomic_cas as '@atomic_cas@12'
-	atomic_cas:
+	; isz __fastcall _afn_atcasW(void *ptr, isz old_val, isz new_val)
+	public _afn_atcasW as '@_afn_atcasW@12'
+	_afn_atcasW:
 		use32
 
 		; Compare and Swap
@@ -361,9 +331,9 @@ match =WIN32, PLATFORM {
 
 		ret
 
-	; isz __fastcall atomic_swap(void *ptr, isz val)
-	public atomic_swap as '@atomic_swap@8'
-	atomic_swap:
+	; isz __fastcall _afn_atswapW(void *ptr, isz val)
+	public _afn_atswapW as '@_afn_atswapW@8'
+	_afn_atswapW:
 		use32
 
 		; Swap
@@ -371,73 +341,45 @@ match =WIN32, PLATFORM {
 		lock xchg [ecx], eax
 		ret
 
-	; void __fastcall atomic_inc(void *ptr)
-	public atomic_inc as '@atomic_inc@4'
-	atomic_inc:
+	; void __fastcall _afn_atincW(void *ptr)
+	public _afn_atincW as '@_afn_atincW@4'
+	_afn_atincW:
 		use32
 
 		; Add and Fetch
 		lock add [ecx], WORD 1
 		ret
 
-	; void __fastcall atomic_dec(void *ptr)
-	public atomic_dec as '@atomic_dec@4'
-	atomic_dec:
+	; void __fastcall _afn_atdecW(void *ptr)
+	public _afn_atdecW as '@_afn_atdecW@4'
+	_afn_atdecW:
 		use32
 
 		; Add and Fetch
 		lock add [ecx], WORD -1
 		ret
 
-	; void __fastcall atomic_add(void *ptr, void *val)
-	public atomic_add as '@atomic_add@8'
-	atomic_add:
-		use32
-
-		; Add and Fetch
-		lock add [ecx], edx
-		ret
-
-	; void __fastcall atomic_bit_set(void *ptr, void *val)
-	public atomic_bit_set as '@atomic_bit_set@8'
-	atomic_bit_set:
-		use32
-
-		; Or and Fetch
-		lock or [ecx], edx
-		ret
-
-	; void __fastcall atomic_bit_clear(void *ptr, void *val)
-	public atomic_bit_clear as '@atomic_bit_clear@8'
-	atomic_bit_clear:
-		use32
-
-		; And and Fetch
-		not edx
-		lock and [ecx], edx
-		ret
-
-	; void load_barrier()
-	public load_barrier as '@load_barrier@0'
-	load_barrier:
+	; void _afn_lfence()
+	public _afn_lfence as '@_afn_lfence@0'
+	_afn_lfence:
 		lfence
 		ret
 
-	; void store_barrier()
-	public store_barrier as '@store_barrier@0'
-	store_barrier:
+	; void _afn_sfence()
+	public _afn_sfence as '@_afn_sfence@0'
+	_afn_sfence:
 		sfence
 		ret
 
-	; void cpu_barrier()
-	public cpu_barrier as '@cpu_barrier@0'
-	cpu_barrier:
+	; void _afn_mfence()
+	public _afn_mfence as '@_afn_mfence@0'
+	_afn_mfence:
 		mfence
 		ret
 
-	; void cpu_relax()
-	public cpu_relax as '@cpu_relax@0'
-	cpu_relax:
+	; void _afn_cpurelax()
+	public _afn_cpurelax as '@_afn_cpurelax@0'
+	_afn_cpurelax:
 		pause
 		ret
 }

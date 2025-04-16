@@ -67,6 +67,7 @@ main(int argc,
 	app_close();
 
 	appjob_wait(tph);
+	appjob_quit(tph);
 	usz *_killme = 0;
 	*_killme = 0xDEADA55E;
 
@@ -153,12 +154,12 @@ print_fn_addresses(MArena *a)
 	fb8_append_hex(&fb, (usz)mcs_unlock);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_load:         "));
-	fb8_append_hex(&fb, (usz)atomic_load);
+	fb8_append(&fb, s8("_afn_atloadW:         "));
+	fb8_append_hex(&fb, (usz)_afn_atloadW);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_store:        "));
-	fb8_append_hex(&fb, (usz)atomic_store);
+	fb8_append(&fb, s8("_afn_atstoreW:        "));
+	fb8_append_hex(&fb, (usz)_afn_atstoreW);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("futex_wait:          "));
@@ -169,24 +170,24 @@ print_fn_addresses(MArena *a)
 	fb8_append_hex(&fb, (usz)futex_wake);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("cpu_relax:           "));
-	fb8_append_hex(&fb, (usz)cpu_relax);
+	fb8_append(&fb, s8("_afn_cpurelax:           "));
+	fb8_append_hex(&fb, (usz)_afn_cpurelax);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_inc:          "));
-	fb8_append_hex(&fb, (usz)atomic_inc);
+	fb8_append(&fb, s8("_afn_atincW:          "));
+	fb8_append_hex(&fb, (usz)_afn_atincW);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_dec:          "));
-	fb8_append_hex(&fb, (usz)atomic_dec);
+	fb8_append(&fb, s8("_afn_atdecW:          "));
+	fb8_append_hex(&fb, (usz)_afn_atdecW);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_cas:      "));
-	fb8_append_hex(&fb, (usz)atomic_cas);
+	fb8_append(&fb, s8("_afn_atcasW:      "));
+	fb8_append_hex(&fb, (usz)_afn_atcasW);
 	fb8_append_lf(&fb);
 
-	fb8_append(&fb, s8("atomic_swap:       "));
-	fb8_append_hex(&fb, (usz)atomic_swap);
+	fb8_append(&fb, s8("_afn_atswapW:       "));
+	fb8_append_hex(&fb, (usz)_afn_atswapW);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("__mcs_lock:           "));
@@ -223,7 +224,7 @@ print_fn_addresses(MArena *a)
 	pointer_t test = {(pointer_t *)0xDEADBEEF, 32};
 	pointer_t test2;
 	pointer_t test3 = {(pointer_t *)0xC001BABE, 64};
-	atomic_store128(&test2, &test);
-	atomic_cas128((void*)&test, (void*)&test2, (void*)&test3);
+	_afn_atstoreD(&test2, &test);
+	_afn_atcasD((void*)&test, (void*)&test2, (void*)&test3);
 }
 

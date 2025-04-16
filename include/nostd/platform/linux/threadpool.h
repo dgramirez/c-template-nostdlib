@@ -128,8 +128,8 @@ linux_job_post(TpHandle tphandle,
 	if (!hjob)
 		return 0;
 
-	if (atomic_load32(tpstack->futex_jobpost) == 0) {
-		atomic_store32(tpstack->futex_jobpost, 1);
+	if (_afn_atloadI(tpstack->futex_jobpost) == 0) {
+		_afn_atstoreI(tpstack->futex_jobpost, 1);
 		futex_wake(tpstack->futex_jobpost, 1);
 	}
 
@@ -142,8 +142,8 @@ linux_job_wait(TpHandle tphandle)
 	TpStack *s;
 	s = (TpStack *)tphandle;
 
-	if (atomic_load(s->work_count) > 0) {
-		atomic_store(s->queue->futex_jobavail, 0);
+	if (_afn_atloadW(s->work_count) > 0) {
+		_afn_atstoreW(s->queue->futex_jobavail, 0);
 		futex_wait(s->queue->futex_jobavail, 0);
 	}
 }
@@ -154,8 +154,8 @@ linux_job_quit(TpHandle tphandle)
 	TpStack *s;
 	s = (TpStack *)tphandle;
 
-	atomic_store(s->quit, 1);
-	atomic_store32(s->futex_jobpost, 1);
+	_afn_atstoreW(s->quit, 1);
+	_afn_atstoreI(s->futex_jobpost, 1);
 	futex_wake_all(s->futex_jobpost);
 }
 
@@ -181,36 +181,36 @@ linux_tp_entry(TpStack *s)
 	marena_load(&tmp);
 	do {
 		// Wait for Job
-		while (atomic_load(&s->queue->head.ptr) == 0) {
-			if (atomic_load(s->quit))
+		while (_afn_atloadW(&s->queue->head.ptr) == 0) {
+			if (_afn_atloadW(s->quit))
 				break;
 
 			spin = 300;
 			if (spin-- <= 0) {
-				atomic_store32(s->futex_jobpost, 0);
+				_afn_atstoreI(s->futex_jobpost, 0);
 				futex_wait(s->futex_jobpost, 0);
 			}
 			else
-				cpu_relax();
+				_afn_cpurelax();
 		}
 
 		// Quit?
-		if (atomic_load(s->quit))
+		if (_afn_atloadW(s->quit))
 			break;
 
 		// Get Job
 		queue_tpjob_dequeue(s->queue, job);
-		atomic_inc(s->work_count);
+		_afn_atincW(s->work_count);
 
 		// Do Job
 		if (job.fn) job.fn(job.args, &s->thread_items);
-		atomic_dec(s->work_count);
+		_afn_atdecW(s->work_count);
 
 		// Free Job
 		mcs_lock(&s->thread_items.mtx);
 		if (job.fn) {
-			if (atomic_load(s->queue->futex_jobavail) == 0) {
-				atomic_store(s->queue->futex_jobavail, 1);
+			if (_afn_atloadW(s->queue->futex_jobavail) == 0) {
+				_afn_atstoreW(s->queue->futex_jobavail, 1);
 				futex_wake(s->queue->futex_jobavail, 1);
 			}
 		}
@@ -218,8 +218,8 @@ linux_tp_entry(TpStack *s)
 	} while (1);
 
 	// End
-	if (atomic_load(s->queue->futex_jobavail) == 0) {
-		atomic_store(s->queue->futex_jobavail, 1);
+	if (_afn_atloadW(s->queue->futex_jobavail) == 0) {
+		_afn_atstoreW(s->queue->futex_jobavail, 1);
 		futex_wake(s->queue->futex_jobavail, 1);
 	}
 

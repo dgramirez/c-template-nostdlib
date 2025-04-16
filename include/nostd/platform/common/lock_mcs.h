@@ -45,17 +45,17 @@ __mcs_lock(MCSLock *lock, MCSLock *me)
 	MCSLock *pred;
 	int spin;
 
-	atomic_store(&me->next, 0);
-	atomic_store32(&me->locked, 0);
+	_afn_atstoreW(&me->next, 0);
+	_afn_atstoreI(&me->locked, 0);
 
-	pred = (MCSLock *)atomic_swap(lock, (isz)me);
+	pred = (MCSLock *)_afn_atswapW(lock, (isz)me);
 	if (pred) {
-		atomic_store32(&me->locked, 1);
-		atomic_store(&pred->next, (isz)me);
+		_afn_atstoreI(&me->locked, 1);
+		_afn_atstoreW(&pred->next, (isz)me);
 		spin = 300;
 		while (me->locked) {
 			if ((spin--) > 0)
-				cpu_relax();
+				_afn_cpurelax();
 			else
 				__thread_wait(&me->locked, 1);
 		}
@@ -67,21 +67,21 @@ __mcs_unlock(MCSLock *lock, MCSLock *me)
 {
 	isz _me = (isz)me;
 	if (!me->next) {
-		if (atomic_cas(lock, _me, 0) == _me) {
+		if (_afn_atcasW(lock, _me, 0) == _me) {
 			return;
 		}
 
 		do {
-			cpu_relax();
+			_afn_cpurelax();
 		} while (!me->next);
 	}
 
-	if (atomic_load32(&me->next->locked) == 1) {
-		atomic_store32(&me->next->locked, 0);
+	if (_afn_atloadI(&me->next->locked) == 1) {
+		_afn_atstoreI(&me->next->locked, 0);
 		__thread_wake_one(&me->next->locked);
 	}
 	else
-		atomic_store32(&me->next->locked, 0);
+		_afn_atstoreI(&me->next->locked, 0);
 }
 
 local void

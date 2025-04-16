@@ -80,19 +80,19 @@ atomic_test()
 	isz y;
 	isz z;
 
-	atomic_store(&x, 1337);
+	_afn_atstoreW(&x, 1337);
 	assert(x == 1337, "Atomic Store has Failed...");
 
 	y = 403;
-	atomic_inc(&y);
+	_afn_atincW(&y);
 	assert(y == 404, "Atomic Increment has failed...");
 
 	z = 1338;
-	atomic_dec(&z);
+	_afn_atdecW(&z);
 	assert(z == 1337, "Atomic Decrement has failed...");
 
 	x = 1337;
-	atomic_cas(&x, z, y);
+	_afn_atcasW(&x, z, y);
 	assert(x == y, "Atomic Compare & Exchange has failed...");
 }
 

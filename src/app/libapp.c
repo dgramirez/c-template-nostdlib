@@ -272,10 +272,6 @@ app_update()
 	fb8_flush(&fb);
 	mlock_release(mlock);
 
-	// Finish with the application (Not doing this will have the app run
-	// Continually, which may be ideal for a simple protocol client.)
-	g_platform->run_app = 0;
-
 	// Returning a positive or negative number acts as an error value.
 	return 0;
 }

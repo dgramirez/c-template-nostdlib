@@ -150,8 +150,8 @@ appjob_post(TpAppHandle   tphandle,
 	if (!hjob)
 		return 0;
 
-	if (atomic_load(tpstack->queue->addr_jobavail) == 0) {
-		atomic_store32(tpstack->queue->addr_jobavail, 1);
+	if (_afn_atloadW(tpstack->queue->addr_jobavail) == 0) {
+		_afn_atstoreI(tpstack->queue->addr_jobavail, 1);
 		__thread_wake_one(tpstack->queue->addr_jobavail);
 	}
 
@@ -164,8 +164,8 @@ appjob_wait(TpAppHandle tphandle)
 	TpAppStack *s;
 	s = (TpAppStack *)tphandle;
 
-	if (atomic_load(s->work_count) > 0) {
-		atomic_store(s->queue->addr_jobavail, 0);
+	if (_afn_atloadW(s->work_count) > 0) {
+		_afn_atstoreW(s->queue->addr_jobavail, 0);
 		__thread_wait(s->queue->addr_jobavail, 0);
 	}
 }
@@ -176,8 +176,8 @@ appjob_quit(TpAppHandle tphandle)
 	TpAppStack *s;
 	s = (TpAppStack *)tphandle;
 
-	atomic_store32(s->quit, 1);
-	atomic_store32(s->queue->addr_jobposted, 1);
+	_afn_atstoreI(s->quit, 1);
+	_afn_atstoreI(s->queue->addr_jobposted, 1);
 	__thread_wake_all(s->queue->addr_jobposted);
 }
 
@@ -206,27 +206,27 @@ appjob_thread_entry(TpAppStack *s)
 	do {
 		// Wait for Job
 		spin = 300;
-		while (atomic_load(&s->queue->head.ptr->next.ptr) == 0) {
-			if (atomic_load(s->quit))
+		while (_afn_atloadW(&s->queue->head.ptr->next.ptr) == 0) {
+			if (_afn_atloadW(s->quit))
 				break;
 
 			if (spin-- <= 0) {
 				logc_debug("Attempting to sleep...");
-				atomic_store32(s->queue->addr_jobposted, 0);
+				_afn_atstoreI(s->queue->addr_jobposted, 0);
 				__thread_wait(s->queue->addr_jobposted, 0);
 			}
 			else
-				cpu_relax();
+				_afn_cpurelax();
 		}
 
 		// Quit?
-		if (atomic_load(s->quit))
+		if (_afn_atloadW(s->quit))
 			break;
 
 		// Get Job
 		mcs_lock(&s->tdata.mtx);
 		queue_appjob_dequeue(s->queue, &job);
-		atomic_inc(s->work_count);
+		_afn_atincW(s->work_count);
 		mcs_unlock(&s->tdata.mtx);
 
 		// Do Job
@@ -237,13 +237,13 @@ appjob_thread_entry(TpAppStack *s)
 
 			job_fn(job_args, &s->tdata);
 		}
-		atomic_dec(s->work_count);
+		_afn_atdecW(s->work_count);
 
 		// Free Job
 		mcs_lock(&s->tdata.mtx);
 		if (job->fn) {
-			if (atomic_load(s->queue->addr_jobavail) == 0) {
-				atomic_store(s->queue->addr_jobavail, 1);
+			if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
+				_afn_atstoreW(s->queue->addr_jobavail, 1);
 				__thread_wake_one(s->queue->addr_jobavail);
 			}
 		}
@@ -251,8 +251,8 @@ appjob_thread_entry(TpAppStack *s)
 	} while (1);
 
 	// End
-	if (atomic_load(s->queue->addr_jobavail) == 0) {
-		atomic_store(s->queue->addr_jobavail, 1);
+	if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
+		_afn_atstoreW(s->queue->addr_jobavail, 1);
 		__thread_wake_one(s->queue->addr_jobavail);
 	}
 
