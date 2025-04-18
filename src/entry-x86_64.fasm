@@ -6,6 +6,8 @@ match =LINUX, PLATFORM {
 	public environ
 	section '.bss' writeable
 		environ rq 1;
+		_afn_atstoreDW_lock dq 0
+		_afn_atcasD_lock dq 0
 
 	; --- Code Section ---
 	section '.text' executable align 16
@@ -33,11 +35,23 @@ match =LINUX, PLATFORM {
 }
 match =WIN64, PLATFORM {
 	format MS64 COFF
+
+	section '.data' readable writeable
+		_afn_atstoreDW_lock dq 0
+		_afn_atcasD_lock dq 0
+
+	section '.text' code readable executable align 16
 	include "cpu/cpuid-x86_64.fasm"
 	include "cpu/atomics.fasm"
 }
 match =WIN32, PLATFORM {
 	format MS COFF
+
+	section '.data' readable writeable
+		_afn_atstoreDW_lock dd 0
+		_afn_atcasD_lock dd 0
+
+	section '.text' code readable executable align 16
 	include "cpu/cpuid-x86_64.fasm"
 	include "cpu/atomics.fasm"
 }

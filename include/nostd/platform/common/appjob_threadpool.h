@@ -75,7 +75,7 @@ appjob_init_threadpool(MArena *sysmem,
 
 	// Shared Objects
 	shared_queue      = marena_alloc(sysmem, sizeof(AppJobQueue), page_size);
-	allocated = (usz)sysmem->previous;
+	allocated         = (usz)sysmem->previous;
 	shared_queue_pool = marena_alloc(sysmem, sizeof(MPool), 8);
 	shared_lock       = marena_alloc(sysmem, sizeof(MCSLock), 8);
 	shared_work_count = marena_alloc(sysmem, sizeof(usz), 8);
@@ -84,7 +84,7 @@ appjob_init_threadpool(MArena *sysmem,
 	shared_addr_jobpost  = marena_alloc(sysmem, sizeof(usz), 8);
 	shared_addr_jobavail = marena_alloc(sysmem, sizeof(usz), 8);
 
-	allocated = (usz)sysmem->current - allocated;
+	allocated          = (usz)sysmem->current - allocated;
 	pool_buffer_size   = KB(8) - allocated;
 	shared_pool_buffer = marena_alloc(sysmem, pool_buffer_size, 8);
 	mpool_init(shared_queue_pool,
@@ -98,6 +98,7 @@ appjob_init_threadpool(MArena *sysmem,
 	                  shared_addr_jobavail,
 	                  shared_addr_jobpost);
 
+	thread_stack = 0;
 	for (i = 0; i < threads; ++i) {
 		thread_stack = marena_alloc(sysmem, stack_size, page_size);
 
@@ -116,7 +117,7 @@ appjob_init_threadpool(MArena *sysmem,
 		            temp_size,
 		            8);
 
-		max_queue = (pool_buffer_size / threads) - 1;
+		max_queue = (int)((pool_buffer_size / threads) - 1);
 		thread_stack->tdata.q_retired_max     = max_queue;
 		thread_stack->tdata.q_retired_nodes   =
 			marena_alloc(sysmem,
@@ -150,7 +151,7 @@ appjob_post(TpAppHandle   tphandle,
 	if (!hjob)
 		return 0;
 
-	if (_afn_atloadW(tpstack->queue->addr_jobavail) == 0) {
+	if (_afn_atloadI(tpstack->queue->addr_jobavail) == 0) {
 		_afn_atstoreI(tpstack->queue->addr_jobavail, 1);
 		__thread_wake_one(tpstack->queue->addr_jobavail);
 	}
@@ -164,7 +165,7 @@ appjob_wait(TpAppHandle tphandle)
 	TpAppStack *s;
 	s = (TpAppStack *)tphandle;
 
-	if (_afn_atloadW(s->work_count) > 0) {
+	while (_afn_atloadW(&s->queue->head.ptr->next.ptr) != 0) {
 		_afn_atstoreW(s->queue->addr_jobavail, 0);
 		__thread_wait(s->queue->addr_jobavail, 0);
 	}
@@ -192,23 +193,22 @@ appjob_thread_entry(TpAppStack *s)
 	void *job_args;
 	int spin;
 
-	// Loop
-	marena_save(&tmp, &s->tdata.tmp);
 	fb.data = marena_alloc(&s->tdata.tmp, page_size, 8);
 	fb.cap  = page_size;
 
+	marena_save(&tmp, &s->tdata.tmp);
 	fb8_append(&fb, s8("New Thread Enter Thread Pool: "));
 	fb8_append_hex(&fb, (usz)s + sizeof(TpAppStack));
 	fb8_append_lf(&fb);
-
 	log_debug(fb.b);
 	marena_load(&tmp);
+
 	do {
 		// Wait for Job
 		spin = 300;
 		while (_afn_atloadW(&s->queue->head.ptr->next.ptr) == 0) {
 			if (_afn_atloadW(s->quit))
-				break;
+				goto quit_tp;
 
 			if (spin-- <= 0) {
 				logc_debug("Attempting to sleep...");
@@ -233,6 +233,7 @@ appjob_thread_entry(TpAppStack *s)
 		if (job->fn) {
 			job_fn = job->fn;
 			job_args = job->args;
+			marena_reset(&s->tdata.tmp);
 			queue_appjob_retire(s->queue->pool, job, &s->tdata);
 
 			job_fn(job_args, &s->tdata);
@@ -241,7 +242,7 @@ appjob_thread_entry(TpAppStack *s)
 
 		// Free Job
 		mcs_lock(&s->tdata.mtx);
-		if (job->fn) {
+		if (job->fn && _afn_atloadW(s->work_count) == 0) {
 			if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
 				_afn_atstoreW(s->queue->addr_jobavail, 1);
 				__thread_wake_one(s->queue->addr_jobavail);
@@ -249,7 +250,7 @@ appjob_thread_entry(TpAppStack *s)
 		}
 		mcs_unlock(&s->tdata.mtx);
 	} while (1);
-
+quit_tp:
 	// End
 	if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
 		_afn_atstoreW(s->queue->addr_jobavail, 1);
@@ -257,8 +258,6 @@ appjob_thread_entry(TpAppStack *s)
 	}
 
 	marena_save(&tmp, &s->tdata.tmp);
-	fb.data = marena_alloc(&s->tdata.tmp, KB(16), 8);
-	fb.cap  = KB(16);
 
 	fb8_append(&fb, s8("Thread Leaving Thread Pool: "));
 	fb8_append_hex(&fb, (usz)s + sizeof(TpAppStack));

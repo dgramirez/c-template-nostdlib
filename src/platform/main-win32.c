@@ -6,7 +6,7 @@ Win32Main(int argc, s8 *argv)
 	MArena sysmem;
 	PlatformData pd = {0};
 	void *buffer;
-	AppJobQueue *q;
+	TpAppStack *tpas = {0};
 
 	SetUnhandledExceptionFilter(win32_crash_handler);
 
@@ -33,12 +33,11 @@ Win32Main(int argc, s8 *argv)
 
 	win32_init_logger(&sysmem, 0xFF, 0xF);
 	atomic_test();
-	queue_test(&sysmem);
-	q = appjob_init_threadpool(&sysmem, 4, KB(16), KB(4));
+	tpas = appjob_init_threadpool(&sysmem, 1, KB(32), KB(16));
 
-	queue_appjob_enqueue(q, test_fn1, 0, 0);
-	queue_appjob_enqueue(q, test_fn2, 0, 0);
-	queue_appjob_enqueue(q, test_fn3, 0, 0);
+	appjob_post(tpas, test_fn1, 0, 0);
+	appjob_post(tpas, test_fn2, 0, 0);
+	appjob_post(tpas, test_fn3, 0, 0);
 
 	// Buffer
 	pd.bufapp.len  = MB(16);
@@ -52,18 +51,25 @@ Win32Main(int argc, s8 *argv)
 	pd.mlock_release  = mlock_release_mcslock;
 	pd.logsz          = win32_logc;
 	pd.logs8          = win32_log;
+	pd.tp_post        = (PFN_tp_post)appjob_post;
+	pd.tp_quit        = (PFN_tp_quit)appjob_quit;
+	pd.tp_wait_all    = (PFN_tp_wait_all)appjob_wait;
+
 
 	// Others
 	pd.tlock_terminal = &_glock_terminal;
+	pd.tp_data        = tpas;
 	pd.std_out        = (void*)GetStdHandle(STD_OUTPUT_HANDLE);
 	pd.run_app        = 1;
 
 	app_init(&pd);
 	while(pd.run_app) {
 		app_update();
-		Sleep(1);
 	}
 	app_close();
+
+	appjob_wait(tpas);
+	appjob_quit(tpas);
 
 	usz *___killme = 0;
 	*___killme = 0xDEADA55E;
@@ -96,48 +102,3 @@ atomic_test()
 	assert(x == y, "Atomic Compare & Exchange has failed...");
 }
 
-local void
-queue_test(MArena *sysmem)
-{
-	MPool p;
-	MArenaTemp temp;
-	AppJobQueue q;
-	u32 f;
-	AppJobNode *job;
-
-	marena_save(&temp, sysmem);
-	mpool_init(&p,
-	            marena_alloc(sysmem, KB(4), 8),
-	            KB(4),
-	            sizeof(AppJobNode),
-	            8);
-
-	queue_appjob_init(&q, &p, &f);
-
-	log_debug(s8("Queue #1"));
-	queue_appjob_enqueue(&q, test_fn1, 0, 0);
-
-	log_debug(s8("Queue #2"));
-	queue_appjob_enqueue(&q, test_fn2, 0, 0);
-
-	log_debug(s8("Queue #3"));
-	queue_appjob_enqueue(&q, test_fn3, 0, 0);
-
-	log_debug(s8("Dequeue #1"));
-	queue_appjob_dequeue(&q, &job);
-	assert(job->fn == test_fn1, "First Queue is NOT the first item!");
-
-	log_debug(s8("Dequeue #2"));
-	queue_appjob_dequeue(&q, &job);
-	assert(job->fn == test_fn2, "Second Queue is NOT the second item!");
-
-	log_debug(s8("Dequeue #3"));
-	queue_appjob_dequeue(&q, &job);
-	assert(job->fn == test_fn3, "Third Queue is NOT the third item!");
-
-	log_debug(s8("Dequeue #4"));
-	queue_appjob_dequeue(&q, &job);
-	assert(job == 0, "Fourth Queue is NOT 0, or null!");
-
-	marena_load(&temp);
-}

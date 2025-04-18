@@ -273,6 +273,7 @@ app_update()
 	mlock_release(mlock);
 
 	// Returning a positive or negative number acts as an error value.
+	g_platform->run_app = 0;
 	return 0;
 }
 

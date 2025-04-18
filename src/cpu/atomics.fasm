@@ -41,14 +41,14 @@
 ;           -  r8     r9
 ;       Windows x86 [__fastcall]:
 ;           - ecx    edx
-;           - [esp+(1+2)*4]
-;           - [esp+(2+2)*4]
+;           - [esp+(1+x)*4]
+;           - [esp+(2+x)*4]
+;
+;           - NOTE: the x in the esp is equal to the pushd level prior to
+;                   this call. the 1, 2, ... is the args starting with arg2
+;                   and onwards. Remember: ecx and edx occupy arg0 & arg1
+;                   respectively.
 
-section '.bss' writeable
-	_afn_atstoreDW_lock dq 0
-	_afn_atcasD_lock dq 0
-
-section '.text' executable align 16
 match =LINUX, PLATFORM {
 	; void _afn_atstoreW(void *ptr, isz val)
 	public _afn_atstoreW
@@ -220,6 +220,15 @@ match =WIN64, PLATFORM {
 		sfence
 		ret
 
+	; void _afn_atstoreI(void *ptr, isz val)
+	public _afn_atstoreI
+	_afn_atstoreI:
+		use32
+
+		mov [ecx], edx
+		sfence
+		ret
+
 	; isz _afn_atloadW(void *ptr)
 	public _afn_atloadW
 	_afn_atloadW:
@@ -227,6 +236,15 @@ match =WIN64, PLATFORM {
 
 		lfence
 		mov rax, [rcx]
+		ret
+
+	; void _afn_atloadI(void *ptr, isz val)
+	public _afn_atloadI
+	_afn_atloadI:
+		use32
+
+		mov eax, [ecx]
+		sfence
 		ret
 
 	; isz _afn_atcasW(void *ptr, isz old_val, isz new_val)
@@ -237,6 +255,51 @@ match =WIN64, PLATFORM {
 		; Compare and Swap
 		mov rax, rdx
 		lock cmpxchg [rcx], r8
+		ret
+
+	; isz _afn_atcasD(void *ptr, void *old_val, void *new_val)
+	public _afn_atcasD
+	_afn_atcasD:
+		use64
+
+		pushq rbx
+		pushq [r8+8]
+		pushq [r8]
+
+		; SPINLOCK
+		.spinlock_wait_cas128:
+		lea rbx, [_afn_atcasD_lock]
+		xor rax, rax
+		mov r9, 1
+		lock cmpxchg [rbx], r9
+		jnz .spinlock_wait_cas128
+
+		; CRITICAL SECTION
+		mov rax, [rdx]
+		popq r9
+		cmpxchg [rcx], r9
+		jnz .cas128_fail
+
+		mov rax, [rdx+8]
+		pop r9
+		cmpxchg [rcx+8], r9
+		jnz .cas128_fail2
+
+		; RELEASE LOCK
+		mov qword [rbx], 0
+		mov rax, 1
+
+		popq rbx
+		ret
+
+		.cas128_fail:
+		popq r9
+
+		.cas128_fail2:
+		mov qword [rbx], 0
+		mov rax, 0
+
+		popq rbx
 		ret
 
 	; isz _afn_atswapW(void *ptr, isz val)
@@ -302,6 +365,15 @@ match =WIN32, PLATFORM {
 		sfence
 		ret
 
+	; void __fastcall _afn_atstoreI(void *ptr, isz val)
+	public _afn_atstoreI as '@_afn_atstoreI@8'
+	_afn_atstoreI:
+		use32
+
+		mov [ecx], edx
+		sfence
+		ret
+
 	; isz __fastcall _afn_atloadW(void *ptr)
 	public _afn_atloadW as '@_afn_atloadW@4'
 	_afn_atloadW:
@@ -310,6 +382,16 @@ match =WIN32, PLATFORM {
 		lfence
 		mov eax, [ecx]
 		ret
+
+	; isz __fastcall _afn_atloadI(void *ptr)
+	public _afn_atloadI as '@_afn_atloadI@4'
+	_afn_atloadI:
+		use32
+
+		lfence
+		mov eax, [ecx]
+		ret
+
 
 	; isz __fastcall _afn_atcasW(void *ptr, isz old_val, isz new_val)
 	public _afn_atcasW as '@_afn_atcasW@12'
@@ -329,6 +411,61 @@ match =WIN32, PLATFORM {
 		pop esi
 		pop ebx
 
+		ret
+
+	; isz _afn_atcasD(void *ptr, void *old_val, void *new_val)
+	public _afn_atcasD as '@_afn_atcasD@12'
+	_afn_atcasD:
+		use32
+
+		; Calling Convention Save
+		pushd edi
+		pushd esi
+		pushd ebx
+
+		; Value Save
+		mov esi, [esp+(1+3)*4]
+		pushd [esi+4]
+		pushd [esi]
+
+		; SPINLOCK
+		.spinlock_wait_cas128:
+		lea ebx, [_afn_atcasD_lock]
+		xor eax, eax
+		mov edi, 1
+		lock cmpxchg [ebx], edi
+		jnz .spinlock_wait_cas128
+
+		; CRITICAL SECTION
+		mov eax, [edx]
+		popd edi
+		cmpxchg [ecx], edi
+		jnz .cas128_fail
+
+		mov eax, [edx+4]
+		popd edi
+		cmpxchg [ecx+4], edi
+		jnz .cas128_fail2
+
+		; RELEASE LOCK
+		mov dword [ebx], 0
+		mov eax, 1
+
+		popd ebx
+		popd esi
+		popd edi
+		ret
+
+		.cas128_fail:
+		popd edi
+
+		.cas128_fail2:
+		mov dword [ebx], 0
+		mov eax, 0
+
+		popd ebx
+		popd esi
+		popd edi
 		ret
 
 	; isz __fastcall _afn_atswapW(void *ptr, isz val)
