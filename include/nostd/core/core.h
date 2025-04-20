@@ -13,6 +13,7 @@
 // Memory Allocators
 #include "marena.h"
 #include "mpool.h"
+#include "mfreelist.h"
 
 // String Types
 #include "string.h"

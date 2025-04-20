@@ -24,6 +24,9 @@ main(int argc,
 	linux_init_logger(&sysmem, 0xFF, 0xF);
 	linux_setup_crash_handler();
 
+	test_mfreelist(&sysmem);
+	return 0;
+
 	print_fn_addresses(&sysmem);
 
 	tph = appjob_init_threadpool(&sysmem, 4, KB(32), KB(16));
@@ -226,5 +229,30 @@ print_fn_addresses(MArena *a)
 	pointer_t test3 = {(pointer_t *)0xC001BABE, 64};
 	_afn_atstoreD(&test2, &test);
 	_afn_atcasD((void*)&test, (void*)&test2, (void*)&test3);
+}
+
+local void
+test_mfreelist(MArena *a)
+{
+	MArenaTemp temp;
+	MFreelist fl;
+	void *b;
+	usz l;
+	void *flb[64];
+
+	marena_save(&temp, a);
+
+	l = KB(128); 
+	b = marena_alloc(a, l, 8);
+
+	mfreelist_init(&fl, b, l, 8);
+
+	for (int i = 0; i < 64; ++i)
+		flb[i] = mfreelist_alloc(&fl, KB(4), 8);
+
+	for (int i = 0; i < 64; ++i)
+		mfreelist_free(&fl, flb[i]);
+
+	marena_load(&temp);
 }
 
