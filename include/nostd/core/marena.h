@@ -141,8 +141,8 @@ marena_init(MArena        *out,
 {
 	__nostd_usz_t pad;
 
-	if (!__nostd_is_pow2(align))
-		__nostd_assert(0, "Align Variable is NOT power of 2!");
+	__nostd_assert(__nostd_is_pow2(align) > 0,
+	               "Arg3 (align) Variable is NOT power of 2!");
 	pad = __nostd_align_pad(buf, align);
 
 	out->start = (__nostd_u8_t *)buf + pad;
