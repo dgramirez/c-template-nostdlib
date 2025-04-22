@@ -24,6 +24,7 @@ main(int argc,
 	linux_init_logger(&sysmem, 0xFF, 0xF);
 	linux_setup_crash_handler();
 
+	test_mbuddy(&sysmem);
 	test_mfreelist(&sysmem);
 	return 0;
 
@@ -252,6 +253,47 @@ test_mfreelist(MArena *a)
 
 	for (int i = 0; i < 64; ++i)
 		mfreelist_free(&fl, flb[i]);
+
+	marena_load(&temp);
+}
+
+local void
+test_mbuddy(MArena *a)
+{
+	MArenaTemp temp;
+	MBuddy buddy;
+	void *b;
+	void *bitmap;
+	void *bb[64] = {0};
+	usz l;
+	usz bitmap_len;
+
+	marena_save(&temp, a);
+
+	l = KB(128);
+	b = marena_alloc(a, l, l);
+
+	bitmap_len = mbuddy_get_bitmap_len(l);
+	bitmap = marena_alloc(a, bitmap_len, 8);
+
+	mbuddy_init(&buddy, b, l, bitmap);
+
+//	bb[0] = mbuddy_alloc(&buddy, KB(7));
+//	bb[1] = mbuddy_alloc(&buddy, KB(35));
+//	bb[2] = mbuddy_alloc(&buddy, KB(45));
+//
+//	mbuddy_free(&buddy, bb[0]);
+//	mbuddy_free(&buddy, bb[1]);
+
+	for (int i = 0; i < 16; ++i)
+		bb[i] = mbuddy_alloc(&buddy, KB(4));
+
+	for (int i = 1; i < 15; ++i)
+		mbuddy_free(&buddy, bb[i]);
+
+	mbuddy_free(&buddy, bb[0]);
+	mbuddy_free(&buddy, bb[15]);
+
 
 	marena_load(&temp);
 }

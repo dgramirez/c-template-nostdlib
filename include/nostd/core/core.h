@@ -14,6 +14,7 @@
 #include "marena.h"
 #include "mpool.h"
 #include "mfreelist.h"
+#include "mbuddy.h"
 
 // String Types
 #include "string.h"

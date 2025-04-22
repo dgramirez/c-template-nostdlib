@@ -18,6 +18,9 @@ print_fn_addresses(MArena *a);
 local void *
 setup_shared_lib_app();
 
+local void
+test_mbuddy(MArena *a);
+
 declfn(i32, app_init, unref(pd);return -1;, PlatformData *pd);
 declfn(i32, app_update, unref(pd);return -1;, PlatformData *pd);
 declfn(void, app_close,);

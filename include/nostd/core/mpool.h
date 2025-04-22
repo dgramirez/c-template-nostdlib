@@ -3,7 +3,7 @@
  * Author: Derrick G. Ramirez
  *
  * Requirements:
- *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION
+ *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION__
  *     - Use this define above all nostd standalone files.
  *
  * License:
