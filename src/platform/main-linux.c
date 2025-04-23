@@ -24,6 +24,7 @@ main(int argc,
 	linux_init_logger(&sysmem, 0xFF, 0xF);
 	linux_setup_crash_handler();
 
+	test_mstack(&sysmem);
 	test_mbuddy(&sysmem);
 	test_mfreelist(&sysmem);
 	return 0;
@@ -294,6 +295,36 @@ test_mbuddy(MArena *a)
 	mbuddy_free(&buddy, bb[0]);
 	mbuddy_free(&buddy, bb[15]);
 
+
+	marena_load(&temp);
+}
+
+local void
+test_mstack(MArena *a) {
+	MArenaTemp  temp;
+	MStack      stack;
+	void       *b;
+	usz         len;
+	void        *btest[64] = {0};
+
+	marena_save(&temp, a);
+
+	len = KB(64);
+	b = marena_alloc(a, len, 8);
+	mstack_init(&stack, b, len);
+
+	btest[0] = mstack_alloc(&stack, 32, 32);
+	btest[1] = mstack_alloc(&stack, KB(4), KB(4));
+
+	mstack_free(&stack, btest[0]);
+	btest[1] = mstack_realloc(&stack, btest[1], KB(2), KB(2));
+	btest[1] = mstack_realloc(&stack, btest[1], KB(8), KB(4));
+	btest[2] = mstack_realloc(&stack, btest[0], 64, 64);
+
+
+	mstack_pop(&stack);
+	mstack_free(&stack, btest[1]);
+	mstack_free(&stack, btest[0]);
 
 	marena_load(&temp);
 }

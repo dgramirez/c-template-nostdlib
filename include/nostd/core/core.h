@@ -15,6 +15,7 @@
 #include "mpool.h"
 #include "mfreelist.h"
 #include "mbuddy.h"
+#include "mstack.h"
 
 // String Types
 #include "string.h"

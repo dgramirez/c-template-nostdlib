@@ -27,5 +27,9 @@ declfn(void, app_close,);
 
 local void
 test_mfreelist(MArena *a);
+
+local void
+test_mstack(MArena *a);
+
 #endif // SRC_MAIN_LINUX_H
 
