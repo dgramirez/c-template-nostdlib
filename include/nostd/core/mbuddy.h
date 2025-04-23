@@ -1,4 +1,4 @@
-#/**************************************************************************
+/**************************************************************************
  * Name:   Memory Buddy (MBuddy, mbuddy.h)
  * Author: Derrick G. Ramirez
  *
@@ -230,13 +230,13 @@ __nostd_api __nostd_usz_t
 mbuddy_get_bitmap_len(__nostd_usz_t len);
 
 __nostd_api void
-mbuddy_set_bit(u8 *bitmap, __nostd_usz_t i);
+mbuddy_set_bit(__nostd_u8_t *bitmap, __nostd_usz_t i);
 
 __nostd_api void
-mbuddy_clear_bit(u8 *bitmap, __nostd_usz_t i);
+mbuddy_clear_bit(__nostd_u8_t *bitmap, __nostd_usz_t i);
 
 __nostd_api int
-mbuddy_test_bit(u8 *bitmap, __nostd_usz_t i);
+mbuddy_test_bit(__nostd_u8_t *bitmap, __nostd_usz_t i);
 
 //////////////////////////
 // Function Definitions //

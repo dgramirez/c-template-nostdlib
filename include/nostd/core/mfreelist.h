@@ -182,7 +182,7 @@ mfreelist_init(MFreelist     *fl,
 	pad = __nostd_align_pad(buf, align);
 
 	fl->len  = len - pad;
-	fl->buf  = buf + pad;
+	fl->buf  = (__nostd_u8_t *)buf + pad;
 	mfreelist_reset(fl);
 }
 
@@ -499,11 +499,11 @@ __nostd_api void
 mfreelist_remove(MFreelist *fl,
                  MFLNode *node)
 {
-	MFLNode *replacement;
-	MFLNode *fixup_node;
-	MFLNode *fixup_p;
-	MFLNode *sibling;
-	int orig_color;
+	MFLNode       *replacement;
+	MFLNode       *fixup_node;
+	MFLNode       *fixup_p;
+	MFLNode       *sibling;
+	__nostd_usz_t  orig_color;
 
 	replacement = node;
 	orig_color = mfreelist_get_ncolor(replacement);

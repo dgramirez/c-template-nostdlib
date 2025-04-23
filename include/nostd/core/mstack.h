@@ -129,13 +129,14 @@ mstack_reset(MStack *stack);
 //////////////////////////
 // Function Definitions //
 //////////////////////////
+#if defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION__) || defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION_MSTACK__)
 __nostd_api void
 mstack_init(MStack        *out,
             void          *buf,
             __nostd_usz_t  len)
 {
 	out->start    = buf;
-	out->end      = buf + len;
+	out->end      = (__nostd_u8_t *)buf + len;
 	out->current  = out->start;
 }
 
@@ -239,6 +240,7 @@ __nostd_api void
 mstack_reset(MStack *stack) {
 	stack->current = stack->start;
 }
+#endif // defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION__) || defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION_MSTACK__)
 
 #endif // __STANDALONE_MEMORY_STACK_H
 
