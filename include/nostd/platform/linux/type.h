@@ -2,12 +2,12 @@
 #define INCLUDE_PLATFORM_LINUX_TYPE_H
 
 typedef struct {
-	b8     mb;
-	fb8    cb;
-	fb8    fb;
-	fb8    nb;
-	u32    flags_level;
-	u32    flags_format;
+	fb8    fb_terminal;
+	fb8    fb_file;
+	fb8    fb_network;
+	usz    flags_terminal;
+	usz    flags_file;
+	usz    flags_network;
 } Logger;
 
 #endif // INCLUDE_PLATFORM_LINUX_TYPE_H

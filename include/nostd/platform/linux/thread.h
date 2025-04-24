@@ -23,5 +23,17 @@ futex_wake(u32 *futex, u32 wake_count)
 	return sys_futex((u32 *)futex, FUTEX_WAKE, wake_count, 0, 0, 0);
 }
 
+local long
+futex_wake_one(u32 *futex)
+{
+	return sys_futex((u32 *)futex, FUTEX_WAKE, 1, 0, 0, 0);
+}
+
+local long
+futex_wake_all(u32 *futex)
+{
+	return sys_futex((u32 *)futex, FUTEX_WAKE, -1, 0, 0, 0);
+}
+
 #endif // INCLUDE_PLATFORM_LINUX_THREAD_H
 

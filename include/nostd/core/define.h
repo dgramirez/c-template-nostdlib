@@ -19,8 +19,8 @@
 /////////////////////////
 #define KB(x) ((x) << 10)
 #define MB(x) ((x) << 20)
-#define GB(x) ((x) << 30)
-#define TB(x) ((x) << 40)
+#define GB(x) ((usz)(x) << 30)
+#define TB(x) ((usz)(x) << 40)
 
 #define flag_set(x, flag) ((x) |= (flag))
 #define flag_rem(x, flag) ((x) &= ~(flag))
@@ -78,6 +78,28 @@
 		swap(x, y)      \
 	}
 
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	#define ceilto_pow2(x) \
+	x--; \
+	x |= x >> 1;  \
+	x |= x >> 2;  \
+	x |= x >> 4;  \
+	x |= x >> 8;  \
+	x |= x >> 16; \
+	x++;
+#else
+	#define ceilto_pow2(x) \
+	x--; \
+	x |= x >> 1;  \
+	x |= x >> 2;  \
+	x |= x >> 4;  \
+	x |= x >> 8;  \
+	x |= x >> 16; \
+	x |= x >> 32; \
+	x++;
+#endif
+
+
 /////////////////////////////////////////
 // Function Types & Function Variables //
 /////////////////////////////////////////
@@ -98,7 +120,6 @@
 #define deffn_dll(dll, name) \
 	name = (PFN_##name)GetProcAddress(dll, #name)
 
-
 /////////////////////////////////////
 // Counted Strings, Logs & Asserts //
 /////////////////////////////////////
@@ -113,10 +134,7 @@
 #define LOG_LEVEL_CRASH    0x4000
 #define LOG_LEVEL_ASSERT   0x8000
 
-#define LOG_FORMAT_CONSOLE 0x1
-#define LOG_FORMAT_FILE    0x2
-#define LOG_FORMAT_FILE_7Z 0x4
-#define LOG_FORMAT_NETWORK 0x8
+#define LOG_FORMAT_FILE_7Z 0x10000
 
 #define log(level, msg) logs8(level, msg, __FILE__, __LINE__, __func__)
 #define log_egg(msg)    log(LOG_LEVEL_GOOFY, msg)

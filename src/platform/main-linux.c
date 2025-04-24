@@ -1,14 +1,144 @@
 #include "main-linux.h"
 
-typedef struct _node_ptr_t {
-	struct _node_ptr_t *next;
-	usz count;
-} pointer_t;
+int
+cmain2(b8 args,
+      b8 mem)
+{
+	PlatformData pdata;
+	MBuddy       mbuddy;
+	TpAppHandle  tph;
+	MArena       tmpa;
+
+	linux_setup_buddy(&mbuddy, mem);
+	linux_init_logger_terminal(mbuddy_alloc(&mbuddy, page_size),
+	                           page_size,
+	                           LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
+	                           LOG_LEVEL_INFO     | LOG_LEVEL_SUCCESS |
+	                           LOG_LEVEL_ANOMALLY | LOG_LEVEL_WARNING |
+	                           LOG_LEVEL_ERROR    | LOG_LEVEL_FATAL);
+	linux_init_logger_file(mbuddy_alloc(&mbuddy, page_size),
+	                       page_size,
+	                       0,
+	                       LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
+	                       LOG_LEVEL_INFO     | LOG_LEVEL_SUCCESS |
+	                       LOG_LEVEL_ANOMALLY | LOG_LEVEL_WARNING |
+	                       LOG_LEVEL_ERROR    | LOG_LEVEL_FATAL   |
+	                       LOG_FORMAT_FILE_7Z);
+	linux_init_logger_network(mbuddy_alloc(&mbuddy, page_size),
+	                          page_size,
+	                          0,
+	                          LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
+	                          LOG_LEVEL_INFO     | LOG_LEVEL_SUCCESS |
+	                          LOG_LEVEL_ANOMALLY | LOG_LEVEL_WARNING |
+	                          LOG_LEVEL_ERROR    | LOG_LEVEL_FATAL   |
+	                          LOG_FORMAT_FILE_7Z);
+	linux_setup_crash_handler();
+
+	linux_setup_shared_lib_app();
+	assert(app_init,   "Failed to get app_init from libapp.so");
+	assert(app_update, "Failed to get app_update from libapp.so");
+	assert(app_close,  "Failed to get app_close from libapp.so");
+
+	marena_init(&tmpa, mbuddy_alloc(&mbuddy, MB(4)), MB(4), 8); 
+	tph  = appjob_init_threadpool(&tmpa, 1, KB(32), KB(16));
+	linux_setup_platform_data(&pdata, &mbuddy);
+	pdata.tp_data = tph;
+	app_init(&pdata);
+	while (pdata.run_app) {
+		app_update(&pdata);
+	}
+	app_close();
+
+	appjob_wait(tph);
+	appjob_quit(tph);
+	return 0;
+}
+
+local void
+linux_setup_buddy(MBuddy *mbuddy,
+                  b8 mem)
+{
+	usz mlen = mem.len >> 1;
+	ceilto_pow2(mlen);
+	mlen = mbuddy_get_bitmap_len(mlen);
+	mbuddy_init(mbuddy, mem.data + mlen, mem.len - mlen, mem.data);
+}
+
+local void *
+linux_setup_shared_lib_app()
+{
+#ifndef USING_LIBC
+	// A few notes for me:
+	// 1.) Maybe I should somewhat follow "dlopen"'s abi.
+	//     As in: return a (void *) with the necessary data to use for
+	//     dlsym and dlclose.
+	// 2.) Also, Perhaps a fresh perspective may be in order. I may want
+	//     to bring in new allocators (free-list, buddy, slab, etc.)
+	// 3.) I have to understand how much of a time sink this will be, as
+	//     I am unaware on how to handle certain aspects still (like TLS)
+	assert(0, "Shouldn't really pass until custom dl is completed. . .");
+	Solib app = {0};
+	b8 dlmem;
+	dlmem.len  = MB(8);
+	dlmem.data = mmap_anon(dlmem.len);
+
+	dlinit(dlmem.data, dlmem.len);
+	dlopen(&app, "libapp.so");
+
+	deffn_dlsym(&app, app_init);
+	deffn_dlsym(&app, app_update);
+	deffn_dlsym(&app, app_close);
+
+	return 0;
+#else
+	const char *solib = "./libapp.so";
+	void *app = dlopen(solib, RTLD_NOW);
+	assert(app, "DL has failed to open!");
+
+	deffn_dlsym(app, app_init);
+	deffn_dlsym(app, app_update);
+	deffn_dlsym(app, app_close);
+
+	return app;
+#endif
+}
+
+local void
+linux_setup_platform_data(PlatformData *pdata,
+                          MBuddy       *mbuddy)
+{
+	// Buffer
+	pdata->bufapp.len  = mbuddy->len >> 2;
+	ceilto_pow2(pdata->bufapp.len);
+	pdata->bufapp.data = mbuddy_alloc(mbuddy, pdata->bufapp.len);
+	if (!pdata->bufapp.data)
+		return;
+
+	// PFN
+	pdata->os_write       = fb8_write;
+	pdata->cpuid_vendor   = linux_cpuid_getvendor;
+	pdata->mlock_init     = (PFN_mlock_init)mlock_init_mcslock;
+	pdata->mlock_acquire  = (PFN_mlock_acquire)mlock_acquire_mcslock;
+	pdata->mlock_release  = (PFN_mlock_release)mlock_release_mcslock;
+	pdata->logsz          = logsz;
+	pdata->logs8          = logs8;
+	pdata->tp_post        = (PFN_tp_post)appjob_post;
+	pdata->tp_quit        = (PFN_tp_quit)appjob_quit;
+	pdata->tp_wait_all    = (PFN_tp_wait_all)appjob_wait;
+
+	// Others
+	pdata->tlock_terminal = &_glock_terminal;
+	pdata->std_out = 0;
+	pdata->run_app = 1;
+}
+
 
 int
-main(int argc,
-     char **argv)
+cmain(b8 args,
+      b8 mem)
 {
+	return cmain2(args, mem);
+
 	PlatformData pd = {0};
 	MArena sysmem;
 	struct timespec rest = {0};
@@ -21,7 +151,7 @@ main(int argc,
 
 	buffer = mmap_anon(MB(128));
 	marena_init(&sysmem, buffer, MB(128), page_size);
-	linux_init_logger(&sysmem, 0xFF, 0xF);
+//	linux_init_logger(&sysmem, 0xFF, 0xF);
 	linux_setup_crash_handler();
 
 	test_mstack(&sysmem);
@@ -36,7 +166,7 @@ main(int argc,
 	appjob_post(tph, mmm_cake, 0, 0);
 	appjob_post(tph, mmm_pies, 0, 0);
 
-	setup_shared_lib_app();
+	//setup_shared_lib_app();
 	assert(app_init,   "Failed to get app_init from libapp.so");
 	assert(app_update, "Failed to get app_update from libapp.so");
 	assert(app_close,  "Failed to get app_close from libapp.so");
@@ -79,45 +209,6 @@ main(int argc,
 	return 0;
 }
 
-local void *
-setup_shared_lib_app()
-{
-#ifndef USING_LIBC
-	// A few notes for me:
-	// 1.) Maybe I should somewhat follow "dlopen"'s abi.
-	//     As in: return a (void *) with the necessary data to use for
-	//     dlsym and dlclose.
-	// 2.) Also, Perhaps a fresh perspective may be in order. I may want
-	//     to bring in new allocators (free-list, buddy, slab, etc.)
-	// 3.) I have to understand how much of a time sink this will be, as
-	//     I am unaware on how to handle certain aspects still (like TLS)
-	assert(0, "Shouldn't really pass until custom dl is completed. . .");
-	Solib app = {0};
-	b8 dlmem;
-	dlmem.len  = MB(8);
-	dlmem.data = mmap_anon(dlmem.len);
-
-	dlinit(dlmem.data, dlmem.len);
-	dlopen(&app, "libapp.so");
-
-	deffn_dlsym(&app, app_init);
-	deffn_dlsym(&app, app_update);
-	deffn_dlsym(&app, app_close);
-
-	return 0;
-#else
-	const char *solib = "./libapp.so";
-	void *app = dlopen(solib, RTLD_NOW);
-	assert(app, "DL has failed to open!");
-
-	deffn_dlsym(app, app_init);
-	deffn_dlsym(app, app_update);
-	deffn_dlsym(app, app_close);
-
-	return app;
-#endif
-}
-
 local void
 mmm_donuts(void *arg, ThreadAppJobData *thread)
 {
@@ -147,8 +238,8 @@ print_fn_addresses(MArena *a)
 	fb.data = marena_alloc(a, KB(16), 8);
 	fb.cap = KB(16);
 
-	fb8_append(&fb, s8("main:                "));
-	fb8_append_hex(&fb, (usz)main);
+	fb8_append(&fb, s8("cmain:                "));
+	fb8_append_hex(&fb, (usz)cmain);
 	fb8_append_lf(&fb);
 
 	fb8_append(&fb, s8("mcs_lock:            "));
@@ -225,12 +316,6 @@ print_fn_addresses(MArena *a)
 
 	log_debug(fb.b);
 	marena_load(&at);
-
-	pointer_t test = {(pointer_t *)0xDEADBEEF, 32};
-	pointer_t test2;
-	pointer_t test3 = {(pointer_t *)0xC001BABE, 64};
-	_afn_atstoreD(&test2, &test);
-	_afn_atcasD((void*)&test, (void*)&test2, (void*)&test3);
 }
 
 local void

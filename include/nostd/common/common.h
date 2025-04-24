@@ -3,9 +3,11 @@
 
 // All the core items
 #include "../core/core.h"
-#include "typedefs.h"
 
+#include "cpuid.h"
 #include "log.h"
+#include "threads.h"
+
 #include "par.h"
 
 #endif // INCLUDE_NOSTD_COMMON_COMMON_H

@@ -29,7 +29,7 @@ appjob_post(TpAppHandle  tp,
             void        *arg,
             AppJobFlags  f);
 
-local __thread_return __stdcall
+local thread_return __stdcall
 appjob_thread_entry(TpAppStack *s);
 
 local void
@@ -131,7 +131,7 @@ appjob_init_threadpool(MArena *sysmem,
 		thread_stack->quit                  = shared_quit;
 
 		thread_stack->entry = appjob_thread_entry;
-		__thread_create(appjob_thread_entry, thread_stack, stack_size);
+		thread_create(appjob_thread_entry, thread_stack, stack_size);
 	}
 
 	return thread_stack;
@@ -153,7 +153,7 @@ appjob_post(TpAppHandle   tphandle,
 
 	if (_afn_atloadI(tpstack->queue->addr_jobavail) == 0) {
 		_afn_atstoreI(tpstack->queue->addr_jobavail, 1);
-		__thread_wake_one(tpstack->queue->addr_jobavail);
+		thread_wake_one(tpstack->queue->addr_jobavail);
 	}
 
 	return hjob;
@@ -167,7 +167,7 @@ appjob_wait(TpAppHandle tphandle)
 
 	while (_afn_atloadW(&s->queue->head.ptr->next.ptr) != 0) {
 		_afn_atstoreW(s->queue->addr_jobavail, 0);
-		__thread_wait(s->queue->addr_jobavail, 0);
+		thread_wait(s->queue->addr_jobavail, 0);
 	}
 }
 
@@ -179,10 +179,10 @@ appjob_quit(TpAppHandle tphandle)
 
 	_afn_atstoreI(s->quit, 1);
 	_afn_atstoreI(s->queue->addr_jobposted, 1);
-	__thread_wake_all(s->queue->addr_jobposted);
+	thread_wake_all(s->queue->addr_jobposted);
 }
 
-local __thread_return __stdcall
+local thread_return __stdcall
 appjob_thread_entry(TpAppStack *s)
 {
 	// Variable Section
@@ -213,7 +213,7 @@ appjob_thread_entry(TpAppStack *s)
 			if (spin-- <= 0) {
 				logc_debug("Attempting to sleep...");
 				_afn_atstoreI(s->queue->addr_jobposted, 0);
-				__thread_wait(s->queue->addr_jobposted, 0);
+				thread_wait(s->queue->addr_jobposted, 0);
 			}
 			else
 				_afn_cpurelax();
@@ -245,7 +245,7 @@ appjob_thread_entry(TpAppStack *s)
 		if (job->fn && _afn_atloadW(s->work_count) == 0) {
 			if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
 				_afn_atstoreW(s->queue->addr_jobavail, 1);
-				__thread_wake_one(s->queue->addr_jobavail);
+				thread_wake_one(s->queue->addr_jobavail);
 			}
 		}
 		mcs_unlock(&s->tdata.mtx);
@@ -254,7 +254,7 @@ quit_tp:
 	// End
 	if (_afn_atloadW(s->queue->addr_jobavail) == 0) {
 		_afn_atstoreW(s->queue->addr_jobavail, 1);
-		__thread_wake_one(s->queue->addr_jobavail);
+		thread_wake_one(s->queue->addr_jobavail);
 	}
 
 	marena_save(&tmp, &s->tdata.tmp);
@@ -266,7 +266,7 @@ quit_tp:
 	log_debug(fb.b);
 	marena_load(&tmp);
 
-	__thread_exit();
+	thread_exit(0);
 }
 
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_THREADPOOL_APPJOB_H

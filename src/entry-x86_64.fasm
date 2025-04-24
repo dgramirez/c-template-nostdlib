@@ -1,6 +1,6 @@
 match =LINUX, PLATFORM {
 	format ELF64
-	extrn main
+	extrn _entry
 
 	; --- Bss  Section ---
 	public environ
@@ -24,7 +24,7 @@ match =LINUX, PLATFORM {
 		lea rdx, [rsi + rdi * 8 + 8]
 
 		mov [environ], rdx;
-		call main
+		call _entry
 
 		mov rdi, rax
 		mov rax, 60

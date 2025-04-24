@@ -17,6 +17,8 @@
 //       can check to see both how many messages sent from previous check
 //       and parse through them (either all, bulk, or single) to update the
 //       client.
+typedef void *FdStdOut;
+
 typedef struct {
 	b8                bufapp;
 	PFN_logsz         logsz;

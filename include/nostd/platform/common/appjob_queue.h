@@ -85,7 +85,7 @@ queue_appjob_enqueue(AppJobQueue *q,
 			return (HAppJob)0;
 
 		_afn_atstoreI(q->addr_jobavail, 0);
-		__thread_wait(q->addr_jobavail, 0);
+		thread_wait(q->addr_jobavail, 0);
 	}
 
 	node->fn         = fn;
@@ -119,7 +119,7 @@ queue_appjob_enqueue(AppJobQueue *q,
 
 	if (!_afn_atloadI(q->addr_jobposted)) {
 		_afn_atstoreI(q->addr_jobposted, 1);
-		__thread_wake_one(q->addr_jobposted);
+		thread_wake_one(q->addr_jobposted);
 	}
 
 	return node;

@@ -3,6 +3,21 @@
 
 #include "nostdp.h"
 
+
+////////////////////
+// Platform Setup //
+////////////////////
+local void *
+linux_setup_shared_lib_app();
+
+local void
+linux_setup_buddy(MBuddy *mbuddy,
+                  b8 mem);
+
+local void
+linux_setup_platform_data(PlatformData *pdata,
+                          MBuddy *buddy);
+
 local void
 mmm_donuts(void *arg, ThreadAppJobData *thread);
 
@@ -14,9 +29,6 @@ mmm_pies(void *arg, ThreadAppJobData *thread);
 
 local void
 print_fn_addresses(MArena *a);
-
-local void *
-setup_shared_lib_app();
 
 local void
 test_mbuddy(MArena *a);

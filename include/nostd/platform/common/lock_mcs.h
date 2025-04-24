@@ -57,7 +57,7 @@ __mcs_lock(MCSLock *lock, MCSLock *me)
 			if ((spin--) > 0)
 				_afn_cpurelax();
 			else
-				__thread_wait(&me->locked, 1);
+				thread_wait(&me->locked, 1);
 		}
 	}
 }
@@ -78,7 +78,7 @@ __mcs_unlock(MCSLock *lock, MCSLock *me)
 
 	if (_afn_atloadI(&me->next->locked) == 1) {
 		_afn_atstoreI(&me->next->locked, 0);
-		__thread_wake_one(&me->next->locked);
+		thread_wake_one(&me->next->locked);
 	}
 	else
 		_afn_atstoreI(&me->next->locked, 0);

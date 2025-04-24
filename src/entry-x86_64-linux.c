@@ -1,1 +1,86 @@
-#include "platform/main-linux.c"
+#include "entry-x86_64-linux.h"
+
+int
+_entry(int    argc,
+       char **argv)
+{
+	b8  arg = {0};
+	b8  mem = {0};
+	int rval;
+
+	mem = setup_memory_profile(ENTRY_MEMORY_PROFILE_MINIMUM);
+	if (!mem.len || !mem.data)
+		return -1;
+
+	arg.len  = argc - 1;
+	arg.data = (u8 *)argv[0];
+	do {
+		argc--;
+		arg.len += c_strlen(argv[argc]);
+	} while (argc > 0);
+
+	// TODO: CPU Library Initialization
+	os_write        = fb8_write;
+	logsz           = linux_logc;
+	logs8           = linux_log;
+	thread_wait     = futex_wait;
+	thread_wake_one = futex_wake_one;
+	thread_wake_all = futex_wake_all;
+	thread_exit     = sys_exit;
+	mlock_init      = (PFN_mlock_init)mlock_init_mcslock;
+	mlock_acquire   = (PFN_mlock_acquire)mlock_acquire_mcslock;
+	mlock_release   = (PFN_mlock_release)mlock_release_mcslock;
+	tp_post         = (PFN_tp_post)appjob_post;
+	tp_quit         = (PFN_tp_quit)appjob_quit;
+	tp_wait_all     = (PFN_tp_wait_all)appjob_wait;
+	thread_create   = linux_thread_create;
+
+	rval = cmain(arg, mem);
+	return rval;
+}
+
+local b8
+setup_memory_profile(int profile) {
+	b8 ret = {0};
+
+	switch(profile) {
+		case ENTRY_MEMORY_PROFILE_DETECT: {
+			ret.len  = MB(64);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		case ENTRY_MEMORY_PROFILE_MINIMUM: {
+			ret.len  = MB(64);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		case ENTRY_MEMORY_PROFILE_LOW: {
+			ret.len  = MB(256);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		case ENTRY_MEMORY_PROFILE_MEDIUM: {
+			ret.len  = GB(1);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		case ENTRY_MEMORY_PROFILE_HIGH: {
+			ret.len  = GB(4);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		case ENTRY_MEMORY_PROFILE_CUSTOM: {
+			ret.len  = 0;
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+
+		default: {
+			ret.len = MB(64);
+			ret.len += mbuddy_get_bitmap_len(ret.len);
+		} break;
+	}
+
+	ret.data = mmap_anon(ret.len);
+	return ret;
+}
+
