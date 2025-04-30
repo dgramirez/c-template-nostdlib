@@ -219,7 +219,7 @@ cpuid_setup(CPUID *out) {
 				out->lcores = _cpuid.amd->identifier_and_features.lcpu_count;
 
 			if (_cpuid.amd->vendor_ext.eax >= 0x80000008)
-				out->pcores = _cpuid.amd->cpu_capacity_and_features_ext.pcores;
+				out->pcores = _cpuid.amd->cpu_capacity_and_features_ext.pcores + 1;
 
 
 		} break;

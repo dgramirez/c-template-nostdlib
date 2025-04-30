@@ -201,6 +201,8 @@
 /////////////////////////////
 #define MBUDDY_MIN_LEN (__nostd_usz_t)4096
 #define MBUDDY_MIN_ORDER 12
+#define MBUDDY_GET_INDEX(offset, order, block_order) \
+	(1 << (b->max_order - order)) - 1 + (offset >> block_order)
 
 typedef struct {
 	__nostd_u8_t  *buf;
@@ -336,10 +338,18 @@ mbuddy_alloc(MBuddy        *b,
 {
 	__nostd_usz_t  offset;
 	__nostd_usz_t  offset_max;
+	__nostd_usz_t  offset_buddy;
+	__nostd_usz_t  offset_p;
 	__nostd_usz_t  i;
+	__nostd_usz_t  buddy_i;
+	__nostd_usz_t  parent_i;
 	__nostd_usz_t  order;
+	__nostd_usz_t  order_v;
 	__nostd_usz_t  block_len;
 	__nostd_usz_t  block_order;
+	__nostd_usz_t  block_len_v;
+	__nostd_usz_t  block_order_v;
+
 	void          *ptr;
 	__nostd_log2_init();
 
@@ -356,18 +366,81 @@ mbuddy_alloc(MBuddy        *b,
 	order       = block_order - MBUDDY_MIN_ORDER;
 
 	ptr = 0;
+//	while (offset < offset_max) {
+//		i = (1 << (b->max_order - order)) - 1 + (offset >> block_order);
+//		if (!mbuddy_test_bit(b->bitmap, i)) {
+//			mbuddy_set_bit(b->bitmap, i);
+//			ptr = b->buf + offset;
+//			break;
+//		}
+//		offset += block_len;
+//	}
 	while (offset < offset_max) {
-		i = (1 << (b->max_order - order)) - 1 + (offset >> block_order);
-		if (!mbuddy_test_bit(b->bitmap, i)) {
+		i = MBUDDY_GET_INDEX(offset, order, block_order);
+		if (i == 0) { // Root Index
+			if (mbuddy_test_bit(b->bitmap, i)) {
+				offset += b->len;
+				break;
+			}
+
 			mbuddy_set_bit(b->bitmap, i);
 			ptr = b->buf + offset;
 			break;
 		}
-		offset += block_len;
+
+		// Buddy
+		offset_buddy = offset ^ block_len;
+		buddy_i = MBUDDY_GET_INDEX(offset_buddy, order, block_order);
+		if (mbuddy_test_bit(b->bitmap, i)) {
+			if (mbuddy_test_bit(b->bitmap, buddy_i)) {
+				offset += (block_len << 1);
+				continue;
+			}
+
+			offset = offset_buddy;
+			mbuddy_set_bit(b->bitmap, buddy_i);
+			ptr = b->buf + offset;
+			break;
+		}
+		else {
+			if (mbuddy_test_bit(b->bitmap, buddy_i)) {
+				mbuddy_set_bit(b->bitmap, i);
+				ptr = b->buf + offset;
+				break;
+			}
+		}
+
+		// Parent
+		order_v       = order;
+		offset_p      = offset;
+		block_len_v   = block_len;
+		block_order_v = block_order;
+		while (1) {
+			block_len_v <<= 1;
+			order_v++;
+			block_order_v++;
+
+			if ((offset_p & (block_len_v - 1)) != 0)
+				offset_p -= (block_len_v >> 1);
+
+			parent_i = MBUDDY_GET_INDEX(offset_p, order_v, block_order_v);
+			if (parent_i == 0)
+				break;
+
+			if (mbuddy_test_bit(b->bitmap, parent_i)) {
+				offset = offset_p + block_len_v;
+				break;
+			}
+		}
+
+		if (parent_i == 0) {
+			mbuddy_set_bit(b->bitmap, i);
+			ptr = b->buf + offset;
+			break;
+		}
 	}
 	if (offset >= offset_max)
 		return 0;
-
 
 	++order;
 	++block_order;
