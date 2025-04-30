@@ -107,9 +107,8 @@ appjob_init_threadpool(MArena *sysmem,
 		//       address and subtracting the size. On Windows, its just
 		//       an argument.
 		#ifdef __linux__
-		thread_stack = (TpAppStack *)((u8*)thread_stack +
-		                                   stack_size -
-		                                   sizeof(TpAppStack));
+		thread_stack = (TpAppStack *)(
+				(u8*)thread_stack + stack_size - sizeof(TpAppStack));
 		#endif
 
 		marena_init(&thread_stack->tdata.tmp,

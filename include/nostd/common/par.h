@@ -20,11 +20,11 @@
 typedef void *FdStdOut;
 
 typedef struct {
+	CPUID             cpuid;
 	b8                bufapp;
 	PFN_logsz         logsz;
 	PFN_logs8         logs8;
 	PFN_os_write      os_write;
-	PFN_cpuid_vendor  cpuid_vendor;
 	PFN_mlock_init    mlock_init;
 	PFN_mlock_acquire mlock_acquire;
 	PFN_mlock_release mlock_release;

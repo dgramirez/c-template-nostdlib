@@ -210,12 +210,12 @@ app_update()
 	fb8_flush(&fb);
 
 	// CPUID (Provided by the Platform Layer.)
-	str = s8("CPUID Vendor: ");
-	cpuid_vendor((u8 *)&randbuf[0], 16);
-	fb8_append_cstr(&fb, &randbuf[0], 12);
-	fb8_append_lf(&fb);
-	fb8_append_lf(&fb);
-	fb8_flush(&fb);
+//	str = s8("CPUID Vendor: ");
+//	cpuid_vendor((u8 *)&randbuf[0], 16);
+//	fb8_append_cstr(&fb, &randbuf[0], 12);
+//	fb8_append_lf(&fb);
+//	fb8_append_lf(&fb);
+//	fb8_flush(&fb);
 
 	// Checking for Alignment Values
 	str = s8("Current Pointer: ");
@@ -291,7 +291,6 @@ app_init(PlatformData *pd)
 	os_write        = g_platform->os_write;
 	logsz           = g_platform->logsz;
 	logs8           = g_platform->logs8;
-	cpuid_vendor    = g_platform->cpuid_vendor;
 	mlock_init      = g_platform->mlock_init;
 	mlock_acquire   = g_platform->mlock_acquire;
 	mlock_release   = g_platform->mlock_release;

@@ -11,8 +11,8 @@ local void *
 linux_setup_shared_lib_app();
 
 local void
-linux_setup_buddy(MBuddy *mbuddy,
-                  b8 mem);
+linux_setup_memory(b8 mem,
+                   MBuddy    *mbuddy);
 
 local void
 linux_setup_platform_data(PlatformData *pdata,

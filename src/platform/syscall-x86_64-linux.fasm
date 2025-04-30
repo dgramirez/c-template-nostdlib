@@ -89,6 +89,20 @@ sys_nanosleep:
 
 	ret
 
+public sys_newthread
+sys_newthread:
+	mov rsi, rdi
+	mov edi, 0x50f00
+
+	mov eax, 56
+	syscall
+
+	mov rdi, rsp     ; MAJOR NOTE - This is a hack to use for clone!
+	ret              ; Requires a structure which contains the thread
+                     ; entrypoint! [Read include/cpu/thread.h]
+	                 ; Further Reading:
+                     ;     https://nullprogram.com/blog/2023/03/23/
+
 public sys_clone
 sys_clone:
 	use64

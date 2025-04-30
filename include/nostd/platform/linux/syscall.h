@@ -52,6 +52,9 @@ sys_clone(unsigned long flags,
           int *child_tid,
           unsigned long tls);
 
+extern long
+sys_newthread(void *stack);
+
 extern void
 sys_exit(int status);
 
@@ -76,14 +79,6 @@ sys_openat(int dirfd,
            const char *filename,
            int flags,
            mode_t mode);
-
-// Note: THIS ISNT A SYSCALL, ITS AN ASM CALL!
-//       I will find a place for this in a later date!
-extern void
-cpuid_native(unsigned int *eax,
-             unsigned int *ebx,
-             unsigned int *ecx,
-             unsigned int *edx);
 
 #endif //INCLUDE_PLATFORM_LINUX_SYSCALL_H
 

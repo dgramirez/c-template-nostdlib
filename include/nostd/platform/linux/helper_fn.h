@@ -19,38 +19,6 @@ munmap_anon(void *buffer,
 	sys_munmap(buffer, size);
 }
 
-static b8
-linux_cpuid_getvendor(u8 *buffer,
-                      usz len)
-{
-	b8 b;
-	u32 *bptr;
-
-	if (len < 12)
-		return s8("");
-	b.data = buffer;
-	b.len  = 12;
-
-	unsigned int eax, ebx, ecx, edx;
-	eax = 0;
-	cpuid_native(&eax, &ebx, &ecx, &edx);
-
-	bptr  = (u32 *)&b.data[0];
-	*bptr = ebx;
-
-	bptr  = (u32 *)&b.data[4];
-	*bptr = edx;
-
-	bptr  = (u32 *)&b.data[8];
-	*bptr = ecx;
-	if (len >= 16) {
-		bptr  = (u32 *)&b.data[12];
-		*bptr = 0;
-	}
-
-	return b;
-}
-
 local i32
 fb8_write(fb8 *b)
 {
@@ -61,7 +29,7 @@ local u32
 linux_thread_create(void *addr, void *args, u32 stack_size) {
 	unref(addr);
 	unref(stack_size);
-	return sys_clone(0x50f00, args, 0, 0, 0);
+	return sys_newthread(args);
 }
 
 #endif // INCLUDE_PLATFORM_LINUX_HELPER_FN_H

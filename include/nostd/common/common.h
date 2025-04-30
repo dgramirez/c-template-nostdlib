@@ -4,6 +4,7 @@
 // All the core items
 #include "../core/core.h"
 
+#include "cpuid_amd.h"
 #include "cpuid.h"
 #include "log.h"
 #include "threads.h"

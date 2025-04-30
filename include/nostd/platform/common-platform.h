@@ -11,13 +11,13 @@
 // Common Assembly & Helper Functions //
 ////////////////////////////////////////
 #include "common/atomics.h"
-#include "common/cpuid.h"
 #include "common/lock_mcs.h"
 #include "common/globals.h"
 
 ////////////////////////////////
 // Remaining Common Functions //
 ////////////////////////////////
+#include "common/cpuid.h"
 #include "common/appjob_queue.h"
 #include "common/appjob_threadpool.h"
 

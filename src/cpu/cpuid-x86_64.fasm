@@ -105,10 +105,10 @@ has_cpuid:
 	cmp eax, ecx       ; see if bit 21 has changed
 	jz .NO_CPUID       ; if no change, no CPUID
 
-	mov eax, 0         ; Set eax to return success value (0)
+	mov eax, 1         ; Set eax to return success value (non-0)
 	ret                ; return eax
 
 	.NO_CPUID:
-	mov eax, 1         ; Set eax to return a failure value (non-0)
+	mov eax, 0         ; Set eax to return a failure value (0)
 	ret                ; return eax
 

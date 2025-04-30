@@ -9,7 +9,9 @@ cmain2(b8 args,
 	TpAppHandle  tph;
 	MArena       tmpa;
 
-	linux_setup_buddy(&mbuddy, mem);
+	linux_setup_memory(mem, &mbuddy);
+
+	cpuid_init();
 	linux_init_logger_terminal(mbuddy_alloc(&mbuddy, page_size),
 	                           page_size,
 	                           LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
@@ -55,13 +57,19 @@ cmain2(b8 args,
 }
 
 local void
-linux_setup_buddy(MBuddy *mbuddy,
-                  b8 mem)
+linux_setup_memory(b8 mem,
+                   MBuddy    *mbuddy)
 {
+	b8 b = {0};
+
 	usz mlen = mem.len >> 1;
 	ceilto_pow2(mlen);
 	mlen = mbuddy_get_bitmap_len(mlen);
 	mbuddy_init(mbuddy, mem.data + mlen, mem.len - mlen, mem.data);
+
+	b.len  = MB(4);
+	b.data = mbuddy_alloc(mbuddy, b.len);
+	mfreelist_init(&_sysfl, b.data, b.len, 8);
 }
 
 local void *
@@ -116,7 +124,6 @@ linux_setup_platform_data(PlatformData *pdata,
 
 	// PFN
 	pdata->os_write       = fb8_write;
-	pdata->cpuid_vendor   = linux_cpuid_getvendor;
 	pdata->mlock_init     = (PFN_mlock_init)mlock_init_mcslock;
 	pdata->mlock_acquire  = (PFN_mlock_acquire)mlock_acquire_mcslock;
 	pdata->mlock_release  = (PFN_mlock_release)mlock_release_mcslock;
@@ -125,13 +132,12 @@ linux_setup_platform_data(PlatformData *pdata,
 	pdata->tp_post        = (PFN_tp_post)appjob_post;
 	pdata->tp_quit        = (PFN_tp_quit)appjob_quit;
 	pdata->tp_wait_all    = (PFN_tp_wait_all)appjob_wait;
-
+	cpuid_setup(&pdata->cpuid);
 	// Others
 	pdata->tlock_terminal = &_glock_terminal;
 	pdata->std_out = 0;
 	pdata->run_app = 1;
 }
-
 
 int
 cmain(b8 args,
@@ -177,7 +183,7 @@ cmain(b8 args,
 
 	// PFN
 	pd.os_write       = fb8_write;
-	pd.cpuid_vendor   = linux_cpuid_getvendor;
+//	pd.cpuid_vendor   = linux_cpuid_getvendor;
 	pd.mlock_init     = (PFN_mlock_init)mlock_init_mcslock;
 	pd.mlock_acquire  = (PFN_mlock_acquire)mlock_acquire_mcslock;
 	pd.mlock_release  = (PFN_mlock_release)mlock_release_mcslock;
