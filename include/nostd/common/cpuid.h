@@ -35,13 +35,14 @@ typedef struct {
 			u32 sse                    : 1; u32 sse2                   : 1;
 			u32 sse3                   : 1; u32 ssse3                  : 1;
 			u32 sse4_1                 : 1; u32 sse4_2                 : 1;
+			u32 sse4a                  : 1; u32 mmx                    : 1;
 			u32 avx                    : 1; u32 avx2                   : 1;
 			u32 avx512f                : 1; u32 reserved_0             : 1;
 			u32 fma                    : 1; u32 fma4                   : 1;
 			u32 tsc                    : 1; u32 rdtscp                 : 1;
 			u32 rdpmc                  : 1; u32 rdpru                  : 1;
 			u32 lwp                    : 1; u32 reserved_1             : 1;
-			u32 reserved_2             : 14;
+			u32 reserved_2             : 12;
 		};
 	};
 
@@ -61,7 +62,8 @@ typedef struct {
 
 typedef struct {
 	CPUIDFeatures features;
-	usz            cache_l1;
+	usz            cache_l1i;
+	usz            cache_l1d;
 	usz            cache_l2;
 	usz            cache_l3;
 	usz            pcores;

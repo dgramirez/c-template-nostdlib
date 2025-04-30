@@ -171,6 +171,93 @@ cpuid_fill_amd(CPUID_AuthenticAMD *amd)
 }
 
 local void
+cpuid_setup_amd(CPUID *out) {
+	CPUID_AuthenticAMD_0x8000001Dh *topology_cache;
+
+	if (_cpuid.amd->vendor.eax >= 0x00000001) {
+		out->lcores = _cpuid.amd->identifier_and_features.lcpu_count;
+
+		out->features.sse    = _cpuid.amd->identifier_and_features.sse;
+		out->features.sse2   = _cpuid.amd->identifier_and_features.sse2;
+		out->features.sse3   = _cpuid.amd->identifier_and_features.sse3;
+		out->features.ssse3  = _cpuid.amd->identifier_and_features.ssse3;
+		out->features.sse4_1 = _cpuid.amd->identifier_and_features.sse4_1;
+		out->features.sse4_2 = _cpuid.amd->identifier_and_features.sse4_2;
+		out->features.mmx    = _cpuid.amd->identifier_and_features.mmx;
+		out->features.avx    = _cpuid.amd->identifier_and_features.avx;
+		out->features.fma    = _cpuid.amd->identifier_and_features.fma;
+		out->features.tsc    = _cpuid.amd->identifier_and_features.tsc;
+	}
+
+	if (_cpuid.amd->vendor.eax >= 0x00000007) {
+		out->features.avx2 = _cpuid.amd->structured_features.avx2;
+	}
+
+	if (_cpuid.amd->vendor_ext.eax >= 0x80000001) {
+		out->features.sse4a  = _cpuid.amd->identifier_and_features_ext.sse4a;
+		out->features.fma4   = _cpuid.amd->identifier_and_features_ext.fma4;
+		out->features.rdtscp = _cpuid.amd->identifier_and_features_ext.rdtscp;
+		out->features.rdpmc  = _cpuid.amd->identifier_and_features_ext.perf_tsc;
+		out->features.lwp    = _cpuid.amd->identifier_and_features_ext.lwp;
+	}
+
+	if (_cpuid.amd->vendor_ext.eax >= 0x80000008) {
+		out->pcores = _cpuid.amd->cpu_capacity_and_features_ext.pcores + 1;
+
+//		out->rdpru  = _cpuid.amd->cpu_capacity_and_features_ext.rdpru;
+	}
+
+	if (_cpuid.amd->vendor_ext.eax >= 0x8000001E)
+		out->pcores /= (_cpuid.amd->topology_cpu.threads_per_compute_unit + 1);
+
+	#define CPUID_TOTAL_BUFFER(tcache)                 \
+		((usz)tcache->cache_line_size + 1) *           \
+		((usz)tcache->cache_physical_partitions + 1) * \
+		((usz)tcache->cache_number_of_ways + 1) *      \
+		((usz)tcache->cache_number_ways_set_associative + 1)
+	if (_cpuid.amd->vendor_ext.eax >= 0x8000001D) {
+		topology_cache = &_cpuid.amd->topology_cache[0];
+		while(topology_cache && topology_cache->cache_type != 0) {
+			switch(topology_cache->cache_level) {
+				case 0: break;
+				case 1: {
+					if (topology_cache->cache_type == 1)  { // Data
+						out->cache_l1d = CPUID_TOTAL_BUFFER(topology_cache);
+					}
+					else if (topology_cache->cache_type == 2) { // Instruction
+						out->cache_l1i = CPUID_TOTAL_BUFFER(topology_cache);
+					}
+				} break;
+				case 2: {
+					out->cache_l2 = CPUID_TOTAL_BUFFER(topology_cache);
+					
+				} break;
+				case 3: {
+					out->cache_l3 = CPUID_TOTAL_BUFFER(topology_cache);
+				} break;
+				default: break;
+			}
+
+			topology_cache++;
+		}
+	}
+	else {
+		if (_cpuid.amd->vendor_ext.eax >= 0x80000005) {
+			out->cache_l1d = (usz)_cpuid.amd->l1.l1d_cache_size_in_kb << 10;
+			out->cache_l1i = (usz)_cpuid.amd->l1.l1i_cache_size_in_kb << 10;
+		}
+
+		if (_cpuid.amd->vendor_ext.eax >= 0x80000006) {
+			out->cache_l2 = (usz)_cpuid.amd->l2_and_l3.l2_cache_size_in_kb << 10;
+			out->cache_l3 = (usz)_cpuid.amd->l2_and_l3.l3_cache_size_in_kb << 10;
+			
+		}
+	}
+	#undef CPUID_TOTAL_BUFFER
+
+}
+
+local void
 cpuid_init() {
 	CPUIDVendor v;
 
@@ -215,13 +302,7 @@ cpuid_setup(CPUID *out) {
 	id = cpuid_get_vendor_id(&v);
 	switch(id) {
 		case CPUID_VENDOR_AuthenticAMD: {
-			if (_cpuid.amd->vendor.eax >= 0x00000001)
-				out->lcores = _cpuid.amd->identifier_and_features.lcpu_count;
-
-			if (_cpuid.amd->vendor_ext.eax >= 0x80000008)
-				out->pcores = _cpuid.amd->cpu_capacity_and_features_ext.pcores + 1;
-
-
+			cpuid_setup_amd(out);
 		} break;
 
 		case CPUID_VENDOR_GenuineIntel: {
