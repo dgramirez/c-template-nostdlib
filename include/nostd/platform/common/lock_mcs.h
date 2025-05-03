@@ -6,22 +6,9 @@
 //
 // Read: https://web.archive.org/web/20140411142823/http://www.cise.ufl.edu/tr/DOC/REP-1992-71.pdf
 
-/////////////////////////////
-// Structures & Prototypes //
-/////////////////////////////
-typedef struct _mcs_lock {
-	struct _mcs_lock *next;
-	u32 locked;
-#if ARCH_EXE == 64
-	u32 reserved;
-#endif
-} MCSLock;
-
-typedef struct {
-	MCSLock me;
-	MCSLock *lock;
-} MCSMutex;
-
+////////////////
+// Prototypes //
+////////////////
 local void
 __mcs_lock(MCSLock *lock,
            MCSLock *me);
@@ -96,17 +83,9 @@ mcs_unlock(MCSMutex *m)
 	__mcs_unlock(m->lock, &m->me);
 }
 
-// TODO: Slab Allocator w/ 32-bytes (16-bytes for x32) should suffice.
-local AppLock
-tlock_create_mcslock(MArena *a)
-{
-	return marena_alloc(a, sizeof(MCSLock), two_word_size);
-}
-
-local AppMLock
-mlock_init_mcslock(MArena   *a,
-                   AppLock  *_lock,
-                   AppMLock *_mlock)
+local TMutex
+mlock_init_mcslock(TLock  _lock,
+                   TMutex _mlock)
 {
 	MCSLock  *lock;
 	MCSMutex *m;
@@ -118,12 +97,12 @@ mlock_init_mcslock(MArena   *a,
 		assert(m->lock == lock,
 			   "Lock Mismatch: mtx->lock and lock do not match.\n"
 			   "Hint: mlock_init doesn't need both lock parameters. "
-			   "Without AppLock, it'll use AppMLock's lock. "
-			   "Without AppMLock, it'll use the AppLock itself. "
-			   "Lastly, without both will create a brand new AppLock.");
+			   "Without TLock, it'll use TMutex's lock. "
+			   "Without TMutex, it'll use the TLock itself. "
+			   "Lastly, without both will create a brand new TLock.");
 	}
 
-	r = marena_alloc(a, sizeof(MCSMutex), two_word_size);
+	r = mfreelist_alloc(&_sysfl, sizeof(MCSMutex), two_word_size);
 
 	if (lock) {
 		r->lock = lock;
@@ -135,22 +114,35 @@ mlock_init_mcslock(MArena   *a,
 		return r;
 	}
 
-	r->lock = tlock_create_mcslock(a);
+	r->lock = mfreelist_alloc(&_sysfl, sizeof(MCSLock), two_word_size);
 	return r;
 }
 
 local void
-mlock_acquire_mcslock(AppMLock _lock)
+mlock_acquire_mcslock(TMutex _lock)
 {
 	MCSMutex *m = (MCSMutex *)_lock;
 	__mcs_lock(m->lock, &m->me);
 }
 
 local void
-mlock_release_mcslock(AppMLock _lock)
+mlock_release_mcslock(TMutex _lock)
 {
 	MCSMutex *m = (MCSMutex *)_lock;
 	__mcs_unlock(m->lock, &m->me);
+}
+
+local void
+mlock_free_mcslock(TMutex _lock,
+                   u32    free_flags)
+{
+	MCSMutex *m = (MCSMutex *)_lock;
+	if (flag_has(free_flags, MCSLOCK_FREE_LOCK)) {
+		mfreelist_free(&_sysfl, m->lock);
+		m->lock = 0;
+	}
+	if (flag_has(free_flags, MCSLOCK_FREE_MUTEX))
+		mfreelist_free(&_sysfl, m);
 }
 
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_MCS_LOCK_H

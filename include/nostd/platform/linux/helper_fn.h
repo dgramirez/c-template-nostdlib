@@ -25,11 +25,11 @@ fb8_write(fb8 *b)
 	return sys_write((usz)b->fd, b->data, b->len);
 }
 
-local u32
+local void *
 linux_thread_create(void *addr, void *args, u32 stack_size) {
 	unref(addr);
 	unref(stack_size);
-	return sys_newthread(args);
+	return (void *)sys_newthread(args);
 }
 
 #endif // INCLUDE_PLATFORM_LINUX_HELPER_FN_H

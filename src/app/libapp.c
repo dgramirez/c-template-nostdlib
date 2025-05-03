@@ -10,7 +10,7 @@ app_update()
 	f32 npi  = -3.14159265;
 	usz uval =  APP_USZ_VALUE;
 	isz ival =  APP_ISZ_VALUE;
-	AppMLock mlock;
+	TMutex mlock;
 	TPData tp_data;
 
 	fb.cap  = KB(4);
@@ -157,7 +157,7 @@ app_update()
 	tp_post(tp_data, show_log_egg, 0, 0);
 
 	// Setup Lock and Immediately Use
-	mlock = mlock_init(&appmem, tlock_terminal, 0);
+	mlock = mlock_init(&appmem, tlock_terminal);
 	mlock_acquire(mlock);
 
 	// Regular str -> fb
@@ -294,6 +294,7 @@ app_init(PlatformData *pd)
 	mlock_init      = g_platform->mlock_init;
 	mlock_acquire   = g_platform->mlock_acquire;
 	mlock_release   = g_platform->mlock_release;
+	mlock_free      = g_platform->mlock_free;
 	tlock_terminal  = g_platform->tlock_terminal;
 	tp_post         = g_platform->tp_post;
 	tp_quit         = g_platform->tp_quit;

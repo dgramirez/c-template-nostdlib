@@ -4,7 +4,7 @@
 #include "nostd.h"
 
 global PlatformData *g_platform;
-global AppLock       tlock_terminal;
+global TLock       tlock_terminal;
 global MArena        appmem;
 
 #if EXE_ARCH == 32

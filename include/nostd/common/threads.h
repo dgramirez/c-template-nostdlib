@@ -1,5 +1,21 @@
 #ifndef INCLUDE_NOSTD_COMMON_THREADS_H
 #define INCLUDE_NOSTD_COMMON_THREADS_H
+////////////////////////
+// Platform-Specifics //
+////////////////////////
+#ifdef _WIN32
+	typedef DWORD thread_return;
+	#ifndef _ZIG
+		#define __atomic_asm_prefix __fastcall
+	#else
+		#define __atomic_asm_prefix
+	#endif
+
+#elif __linux__
+	typedef void thread_return;
+	#define __atomic_asm_prefix
+	#define __stdcall
+#endif
 
 /////////////
 // Threads //
@@ -25,7 +41,7 @@ declfn(void,
        unref(exit_code);,
        int exit_code);
 
-declfn(u32,
+declfn(void *,
        thread_create,
        unref(addr); unref(arg); unref(stack_size); return 0;,
        void *addr,
@@ -35,25 +51,30 @@ declfn(u32,
 ///////////
 // Locks //
 ///////////
-typedef void *AppLock;
-typedef void *AppMLock;
+typedef void *TLock;
+typedef void *TMutex;
 
-declfn(AppMLock,
+declfn(TMutex,
        mlock_init,
-       unref(a); unref(lock); unref(mlock); return 0;,
-       MArena   *a,
-	   AppLock   lock,
-       AppMLock  mlock);
+       unref(lock); unref(mlock); return 0;,
+	   TLock   lock,
+       TMutex  mlock);
 
 declfn(void,
        mlock_acquire,
        unref(lock);,
-       AppMLock *lock);
+       TMutex lock);
 
 declfn(void,
        mlock_release,
        unref(lock);,
-       AppMLock *lock);
+       TMutex lock);
+
+declfn(void,
+       mlock_free,
+       unref(lock); unref(flags);,
+       TMutex lock,
+       u32    flags);
 
 /////////////////
 // Thread Pool //
@@ -79,25 +100,6 @@ declfn(void,
        tp_quit,
        unref(tp_data);,
        TPData tp_data);
-
-////////////////////////
-// Platform-Specifics //
-////////////////////////
-
-#ifdef _WIN32
-	typedef DWORD thread_return;
-	#ifndef _ZIG
-		#define __atomic_asm_prefix __fastcall
-	#else
-		#define __atomic_asm_prefix
-	#endif
-
-#elif __linux__
-	typedef void thread_return;
-	#define __atomic_asm_prefix
-	#define __stdcall
-#endif
-
 
 #endif // INCLUDE_NOSTD_COMMON_THREADS_H
 

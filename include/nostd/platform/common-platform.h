@@ -10,9 +10,10 @@
 ////////////////////////////////////////
 // Common Assembly & Helper Functions //
 ////////////////////////////////////////
+#include "common/types.h"
+#include "common/globals.h"
 #include "common/atomics.h"
 #include "common/lock_mcs.h"
-#include "common/globals.h"
 
 ////////////////////////////////
 // Remaining Common Functions //
