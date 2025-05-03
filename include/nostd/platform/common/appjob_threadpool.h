@@ -9,7 +9,7 @@ typedef struct _tp_stack {
 	// Thread-Based Variables Below:
 	// Note: Pointers here are considered *shared objects* for all threads.
 	ThreadAppJobData  tdata;
-	AppJobQueue      *queue;
+	MSQueue      *queue;
 	usz              *work_count;
 	usz              *quit;
 } TpAppStack;
@@ -27,7 +27,7 @@ local HAppJob
 appjob_post(TpAppHandle  tp,
             AppJobFn     fn,
             void        *arg,
-            AppJobFlags  f);
+            MSQueueFlags  f);
 
 local thread_return __stdcall
 appjob_thread_entry(TpAppStack *s);
@@ -48,7 +48,7 @@ appjob_init_threadpool(MArena *sysmem,
                        usz     temp_size)
 {
 	TpAppStack    *thread_stack;
-	AppJobQueue   *shared_queue;
+	MSQueue   *shared_queue;
 	MCSLock       *shared_lock;
 	MPool         *shared_queue_pool;
 	usz           *shared_work_count;
@@ -74,7 +74,7 @@ appjob_init_threadpool(MArena *sysmem,
 	}
 
 	// Shared Objects
-	shared_queue      = marena_alloc(sysmem, sizeof(AppJobQueue), page_size);
+	shared_queue      = marena_alloc(sysmem, sizeof(MSQueue), page_size);
 	allocated         = (usz)sysmem->previous;
 	shared_queue_pool = marena_alloc(sysmem, sizeof(MPool), 8);
 	shared_lock       = marena_alloc(sysmem, sizeof(MCSLock), 8);
@@ -90,10 +90,10 @@ appjob_init_threadpool(MArena *sysmem,
 	mpool_init(shared_queue_pool,
 	           shared_pool_buffer,
 	           pool_buffer_size,
-	           sizeof(AppJobNode),
+	           sizeof(MSQueueNode),
 	           8);
 
-	queue_appjob_init(shared_queue,
+	msqueue_init(shared_queue,
 	                  shared_queue_pool,
 	                  shared_addr_jobavail,
 	                  shared_addr_jobpost);
@@ -117,12 +117,12 @@ appjob_init_threadpool(MArena *sysmem,
 		            8);
 
 		max_queue = (int)((pool_buffer_size / threads) - 1);
-		thread_stack->tdata.q_retired_max     = max_queue;
-		thread_stack->tdata.q_retired_nodes   =
+		thread_stack->tdata.qr.max     = max_queue;
+		thread_stack->tdata.qr.nodes   =
 			marena_alloc(sysmem,
-			             max_queue * sizeof(AppJobNode *),
+			             max_queue * sizeof(MSQueueNode *),
 		                 page_size);
-		thread_stack->tdata.q_retired_current = 0;
+		thread_stack->tdata.qr.current = 0;
 
 		thread_stack->tdata.mtx.lock        = shared_lock;
 		thread_stack->queue                 = shared_queue;
@@ -140,13 +140,13 @@ local HAppJob
 appjob_post(TpAppHandle   tphandle,
             AppJobFn      fn,
             void         *args,
-            AppJobFlags f)
+            MSQueueFlags f)
 {
 	TpAppStack *tpstack;
 	tpstack = (TpAppStack *)tphandle;
 	HAppJob hjob;
 
-	hjob = queue_appjob_enqueue(tpstack->queue, fn, args, f);
+	hjob = msqueue_enqueue(tpstack->queue, fn, args, f);
 	if (!hjob)
 		return 0;
 
@@ -187,7 +187,7 @@ appjob_thread_entry(TpAppStack *s)
 	// Variable Section
 	MArenaTemp tmp;
 	fb8 fb = {0};
-	AppJobNode *job;
+	MSQueueNode *job;
 	AppJobFn job_fn;
 	void *job_args;
 	int spin;
@@ -224,7 +224,7 @@ appjob_thread_entry(TpAppStack *s)
 
 		// Get Job
 		mcs_lock(&s->tdata.mtx);
-		queue_appjob_dequeue(s->queue, &job);
+		msqueue_dequeue(s->queue, &job);
 		_afn_atincW(s->work_count);
 		mcs_unlock(&s->tdata.mtx);
 
@@ -233,7 +233,7 @@ appjob_thread_entry(TpAppStack *s)
 			job_fn = job->fn;
 			job_args = job->args;
 			marena_reset(&s->tdata.tmp);
-			queue_appjob_retire(s->queue->pool, job, &s->tdata);
+			msqueue_retire(s->queue->pool, job, &s->tdata.qr);
 
 			job_fn(job_args, &s->tdata);
 		}

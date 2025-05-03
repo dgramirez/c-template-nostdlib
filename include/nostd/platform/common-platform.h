@@ -19,7 +19,7 @@
 // Remaining Common Functions //
 ////////////////////////////////
 #include "common/cpuid.h"
-#include "common/appjob_queue.h"
+#include "common/msqueue.h"
 #include "common/appjob_threadpool.h"
 
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_PLATFORM_H
