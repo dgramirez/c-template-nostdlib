@@ -16,7 +16,7 @@ global MArena        appmem;
 #endif
 
 local void
-show_log_debug(void *arg, TPData *tp_data)
+show_log_debug(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -24,7 +24,7 @@ show_log_debug(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_info(void *arg, TPData *tp_data)
+show_log_info(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -33,7 +33,7 @@ show_log_info(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_pass(void *arg, TPData *tp_data)
+show_log_pass(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -41,7 +41,7 @@ show_log_pass(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_odd(void *arg, TPData *tp_data)
+show_log_odd(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -50,7 +50,7 @@ show_log_odd(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_warn(void *arg, TPData *tp_data)
+show_log_warn(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -59,7 +59,7 @@ show_log_warn(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_error(void *arg, TPData *tp_data)
+show_log_error(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -68,7 +68,7 @@ show_log_error(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_fatal(void *arg, TPData *tp_data)
+show_log_fatal(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);
@@ -78,7 +78,7 @@ show_log_fatal(void *arg, TPData *tp_data)
 }
 
 local void
-show_log_egg(void *arg, TPData *tp_data)
+show_log_egg(void *arg, TData *tp_data)
 {
 	unref(arg);
 	unref(tp_data);

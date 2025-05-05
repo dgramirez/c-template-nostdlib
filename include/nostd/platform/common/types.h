@@ -28,7 +28,7 @@ typedef enum {
 	MCSLOCK_FREE_LOCK  = 0x1,
 	MCSLOCK_FREE_MUTEX = 0x2,
 	MCSLOCK_FREE_ALL   = 0x3,
-
 } MCSLockFreeFlags;
+
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_TYPES_H
 

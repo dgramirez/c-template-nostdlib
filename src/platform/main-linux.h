@@ -19,13 +19,13 @@ linux_setup_platform_data(PlatformData *pdata,
                           MBuddy *buddy);
 
 local void
-mmm_donuts(void *arg, ThreadAppJobData *thread);
+mmm_donuts(void *arg, TData *thread);
 
 local void
-mmm_cake(void *arg, ThreadAppJobData *thread);
+mmm_cake(void *arg, TData *thread);
 
 local void
-mmm_pies(void *arg, ThreadAppJobData *thread);
+mmm_pies(void *arg, TData *thread);
 
 local void
 print_fn_addresses(MArena *a);

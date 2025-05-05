@@ -6,8 +6,8 @@ cmain(b8 args,
 {
 	PlatformData pdata;
 	MBuddy       mbuddy;
-	TpAppHandle  tph;
 	MArena       tmpa;
+	TPData       tpdata = {0};
 
 	linux_setup_memory(mem, &mbuddy);
 
@@ -41,18 +41,19 @@ cmain(b8 args,
 	assert(app_update, "Failed to get app_update from libapp.so");
 	assert(app_close,  "Failed to get app_close from libapp.so");
 
+	tp_init_generic(&tpdata, 1, KB(16), KB(4), 0);
+
 	marena_init(&tmpa, mbuddy_alloc(&mbuddy, MB(4)), MB(4), 8); 
-	tph  = appjob_init_threadpool(&tmpa, 1, KB(32), KB(16));
 	linux_setup_platform_data(&pdata, &mbuddy);
-	pdata.tp_data = tph;
+	pdata.tp_data = &tpdata;
 	app_init(&pdata);
 	while (pdata.run_app) {
 		app_update(&pdata);
 	}
 	app_close();
 
-	appjob_wait(tph);
-	appjob_quit(tph);
+	tp_wait(&tpdata, 0);
+	tp_quit(&tpdata);
 	return 0;
 }
 
@@ -123,16 +124,16 @@ linux_setup_platform_data(PlatformData *pdata,
 		return;
 
 	// PFN
-	pdata->os_write       = fb8_write;
-	pdata->mlock_init     = mlock_init_mcslock;
-	pdata->mlock_acquire  = mlock_acquire_mcslock;
-	pdata->mlock_release  = mlock_release_mcslock;
-	pdata->mlock_free     = mlock_free_mcslock;
-	pdata->logsz          = logsz;
-	pdata->logs8          = logs8;
-	pdata->tp_post        = (PFN_tp_post)appjob_post;
-	pdata->tp_quit        = (PFN_tp_quit)appjob_quit;
-	pdata->tp_wait_all    = (PFN_tp_wait_all)appjob_wait;
+	pdata->os_write      = fb8_write;
+	pdata->mlock_init    = mlock_init_mcslock;
+	pdata->mlock_acquire = mlock_acquire_mcslock;
+	pdata->mlock_release = mlock_release_mcslock;
+	pdata->mlock_free    = mlock_free_mcslock;
+	pdata->logsz         = logsz;
+	pdata->logs8         = logs8;
+	pdata->tp_post       = tp_post_generic;
+	pdata->tp_quit       = tp_quit_generic;
+	pdata->tp_wait       = tp_wait_generic;
 	cpuid_setup(&pdata->cpuid);
 	// Others
 	pdata->tlock_terminal = &_glock_terminal;

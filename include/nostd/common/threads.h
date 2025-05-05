@@ -79,27 +79,50 @@ declfn(void,
 /////////////////
 // Thread Pool //
 /////////////////
-typedef void *TPData;
+typedef struct {
+	MArena tmp;
+	TMutex mtx;
+} TData;
+
+typedef struct __tp_stack {
+	void (__stdcall *entry)(struct __tp_stack *);
+
+	TData  tdata;
+	void  *qr;
+	void  *queue;
+	usz   *work_count;
+	usz   *quit;
+} TPStack;
+
+typedef struct {
+	MArena   mem;
+	TPStack *threads;
+	usz      thread_count;
+	usz      stack_size;
+} TPData;
+
 typedef void *TPJob;
-typedef void (*TPJobFn)(void *args, TPData *data);
+typedef void *TPJobArgs;
+typedef void (*TPJobFn)(TPJobArgs args, TData *data);
 
 declfn(TPJob,
        tp_post,
-       unref(tp_data);unref(fn);unref(args);unref(flags);return 0;,
-	   TPData tp_data,
-	   TPJobFn fn,
-	   void *args,
-	   usz flags);
+       unref(tp_data);unref(fn);unref(args);unref(f);return 0;,
+	   TPData  *tp_data,
+	   TPJobFn  fn,
+	   void    *args,
+	   usz      f);
 
 declfn(void,
-       tp_wait_all,
-       unref(tp_data);,
-       TPData tp_data);
+       tp_wait,
+       unref(tp_data); unref(job);,
+       TPData *tp_data,
+       TPJob  job);
 
 declfn(void,
        tp_quit,
        unref(tp_data);,
-       TPData tp_data);
+       TPData *tp_data);
 
 #endif // INCLUDE_NOSTD_COMMON_THREADS_H
 

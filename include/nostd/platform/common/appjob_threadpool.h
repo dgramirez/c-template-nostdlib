@@ -233,7 +233,7 @@ appjob_thread_entry(TpAppStack *s)
 			job_fn = job->fn;
 			job_args = job->args;
 			marena_reset(&s->tdata.tmp);
-			msqueue_retire(s->queue->pool, job, &s->tdata.qr);
+			msqueue_retire(s->queue, job, &s->tdata.qr);
 
 			job_fn(job_args, &s->tdata);
 		}

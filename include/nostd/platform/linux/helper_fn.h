@@ -29,7 +29,7 @@ local void *
 linux_thread_create(void *addr, void *args, u32 stack_size) {
 	unref(addr);
 	unref(stack_size);
-	return (void *)sys_newthread(args);
+	return (void *)sys_clone(0x50f00, args, 0, 0, 0);
 }
 
 #endif // INCLUDE_PLATFORM_LINUX_HELPER_FN_H

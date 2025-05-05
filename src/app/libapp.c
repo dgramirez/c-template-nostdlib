@@ -11,7 +11,7 @@ app_update()
 	usz uval =  APP_USZ_VALUE;
 	isz ival =  APP_ISZ_VALUE;
 	TMutex mlock;
-	TPData tp_data;
+	TPData *tp_data;
 
 	fb.cap  = KB(4);
 	fb.data = marena_alloc(&appmem, fb.cap, word_size);
@@ -157,7 +157,7 @@ app_update()
 	tp_post(tp_data, show_log_egg, 0, 0);
 
 	// Setup Lock and Immediately Use
-	mlock = mlock_init(&appmem, tlock_terminal);
+	mlock = mlock_init(tlock_terminal, 0);
 	mlock_acquire(mlock);
 
 	// Regular str -> fb
@@ -298,7 +298,7 @@ app_init(PlatformData *pd)
 	tlock_terminal  = g_platform->tlock_terminal;
 	tp_post         = g_platform->tp_post;
 	tp_quit         = g_platform->tp_quit;
-	tp_wait_all     = g_platform->tp_wait_all;
+	tp_wait         = g_platform->tp_wait;
 	marena_init(&appmem, g_platform->bufapp.data, g_platform->bufapp.len, 8);
 
 	// Returning a positive or negative number acts as an error value.

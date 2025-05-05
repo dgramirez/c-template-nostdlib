@@ -27,12 +27,12 @@ _entry(int    argc,
 	thread_wake_one = futex_wake_one;
 	thread_wake_all = futex_wake_all;
 	thread_exit     = sys_exit;
-	mlock_init      = (PFN_mlock_init)mlock_init_mcslock;
-	mlock_acquire   = (PFN_mlock_acquire)mlock_acquire_mcslock;
-	mlock_release   = (PFN_mlock_release)mlock_release_mcslock;
-	tp_post         = (PFN_tp_post)appjob_post;
-	tp_quit         = (PFN_tp_quit)appjob_quit;
-	tp_wait_all     = (PFN_tp_wait_all)appjob_wait;
+	mlock_init      = mlock_init_mcslock;
+	mlock_acquire   = mlock_acquire_mcslock;
+	mlock_release   = mlock_release_mcslock;
+	tp_post         = tp_post_generic;
+	tp_quit         = tp_quit_generic;
+	tp_wait         = tp_wait_generic;
 	thread_create   = linux_thread_create;
 
 	rval = cmain(arg, mem);

@@ -37,5 +37,17 @@ _afn_mfence();
 extern void __atomic_asm_prefix
 _afn_cpurelax();
 
+#define atstoreI  _afn_atstoreI
+#define atstoreW  _afn_atstoreW
+#define atstoreD  _afn_atstoreD
+#define atloadW   _afn_atloadW
+#define atloadI   _afn_atloadI
+#define atcasW    _afn_atcasW
+#define atcasD    _afn_atcasD
+#define atswapW   _afn_atswapW
+#define atincW    _afn_atincW
+#define atdecW    _afn_atdecW
+#define cpu_relax _afn_cpurelax
+#define mfence    _afn_mfence
 #endif // INCLUDE_PLATFORM_COMMON_ATOMIC_H
 

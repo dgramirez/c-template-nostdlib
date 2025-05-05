@@ -7,15 +7,6 @@ typedef struct {
 	i32       current;
 } MSQueueRetiredNodes;
 
-typedef struct {
-	MArena              tmp;
-	MCSMutex            mtx;
-	MSQueueRetiredNodes qr;
-} ThreadAppJobData;
-
-typedef void *HAppJob;
-typedef void (*AppJobFn)(void *, ThreadAppJobData *);
-
 typedef enum {
 	TP_POST_EXIT_IF_FAILED    = 0x1,
 	TP_POST_IN_FRONT_OF_QUEUE = 0x2
@@ -37,17 +28,17 @@ typedef struct _app_job_ptr {
 	_afn_atcasD(p, o, n)
 
 typedef struct _app_job_node {
-	AppJobFn   fn;
-	void      *args;
+	TPJobFn     fn;
+	void       *args;
 	MSQueuePtr  next;
 } MSQueueNode;
 
 typedef struct {
 	MSQueuePtr  head;
 	MSQueuePtr  tail;
-	MPool     *pool;
-	u32       *addr_jobavail;
-	u32       *addr_jobposted;
+	MPool      *pool;
+	u32        *addr_jobavail;
+	u32        *addr_jobposted;
 } MSQueue;
 
 local void
@@ -71,9 +62,9 @@ msqueue_init(MSQueue       *q,
 	q->tail.count = 0;
 }
 
-local HAppJob
+local TPJob
 msqueue_enqueue(MSQueue       *q,
-                AppJobFn      fn,
+                TPJobFn       fn,
                 void         *args,
                 MSQueueFlags  flags)
 {
@@ -86,7 +77,7 @@ msqueue_enqueue(MSQueue       *q,
 	node = (MSQueueNode *)mpool_alloc(q->pool);
 	while (!node) {
 		if (flag_has(flags, TP_POST_EXIT_IF_FAILED))
-			return (HAppJob)0;
+			return (TPJob)0;
 
 		_afn_atstoreI(q->addr_jobavail, 0);
 		thread_wait(q->addr_jobavail, 0);
@@ -176,13 +167,15 @@ msqueue_dequeue(MSQueue      *q,
 }
 
 local void
-msqueue_retire(MPool               *qpool,
+msqueue_retire(MSQueue             *q,
                MSQueueNode         *node,
                MSQueueRetiredNodes *qr)
 {
-	int i;
 	MSQueueNode **retired_nodes;
+	MPool        *qpool;
+	int i;
 
+	qpool = q->pool;
 	retired_nodes = (MSQueueNode **)qr->nodes;
 	if (qr->current == qr->max) {
 		for (i = 0; i < qr->max; ++i)

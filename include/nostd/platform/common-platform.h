@@ -20,7 +20,8 @@
 ////////////////////////////////
 #include "common/cpuid.h"
 #include "common/msqueue.h"
-#include "common/appjob_threadpool.h"
+#include "common/tp.h"
+//#include "common/appjob_threadpool.h"
 
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_PLATFORM_H
 
