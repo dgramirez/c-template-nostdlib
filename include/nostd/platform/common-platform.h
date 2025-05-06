@@ -12,6 +12,7 @@
 ////////////////////////////////////////
 #include "common/types.h"
 #include "common/globals.h"
+#include "common/helper_fn.h"
 #include "common/atomics.h"
 #include "common/lock_mcs.h"
 

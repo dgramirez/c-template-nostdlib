@@ -4,7 +4,7 @@
 // Platform-Specifics //
 ////////////////////////
 #ifdef _WIN32
-	typedef DWORD thread_return;
+	typedef u32 thread_return;
 	#ifndef _ZIG
 		#define __atomic_asm_prefix __fastcall
 	#else
@@ -46,7 +46,7 @@ declfn(void *,
        unref(addr); unref(arg); unref(stack_size); return 0;,
        void *addr,
 	   void *arg,
-       u32 stack_size);
+       usz stack_size);
 
 ///////////
 // Locks //

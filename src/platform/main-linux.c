@@ -6,10 +6,9 @@ cmain(b8 args,
 {
 	PlatformData pdata;
 	MBuddy       mbuddy;
-	MArena       tmpa;
 	TPData       tpdata = {0};
 
-	linux_setup_memory(mem, &mbuddy);
+	main_setup_memory(mem, &mbuddy);
 
 	cpuid_init();
 	linux_init_logger_terminal(mbuddy_alloc(&mbuddy, page_size),
@@ -43,7 +42,6 @@ cmain(b8 args,
 
 	tp_init_generic(&tpdata, 1, KB(16), KB(4), 0);
 
-	marena_init(&tmpa, mbuddy_alloc(&mbuddy, MB(4)), MB(4), 8); 
 	linux_setup_platform_data(&pdata, &mbuddy);
 	pdata.tp_data = &tpdata;
 	app_init(&pdata);
@@ -55,22 +53,6 @@ cmain(b8 args,
 	tp_wait(&tpdata, 0);
 	tp_quit(&tpdata);
 	return 0;
-}
-
-local void
-linux_setup_memory(b8 mem,
-                   MBuddy    *mbuddy)
-{
-	b8 b = {0};
-
-	usz mlen = mem.len >> 1;
-	ceilto_pow2(mlen);
-	mlen = mbuddy_get_bitmap_len(mlen);
-	mbuddy_init(mbuddy, mem.data + mlen, mem.len - mlen, mem.data);
-
-	b.len  = MB(4);
-	b.data = mbuddy_alloc(mbuddy, b.len);
-	mfreelist_init(&_sysfl, b.data, b.len, 8);
 }
 
 local void *
@@ -125,12 +107,12 @@ linux_setup_platform_data(PlatformData *pdata,
 
 	// PFN
 	pdata->os_write      = fb8_write;
+	pdata->logsz         = logsz;
+	pdata->logs8         = logs8;
 	pdata->mlock_init    = mlock_init_mcslock;
 	pdata->mlock_acquire = mlock_acquire_mcslock;
 	pdata->mlock_release = mlock_release_mcslock;
 	pdata->mlock_free    = mlock_free_mcslock;
-	pdata->logsz         = logsz;
-	pdata->logs8         = logs8;
 	pdata->tp_post       = tp_post_generic;
 	pdata->tp_quit       = tp_quit_generic;
 	pdata->tp_wait       = tp_wait_generic;

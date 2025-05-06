@@ -2,48 +2,47 @@
 #define INCLUDE_PLATFORM_WIN32_LOG_H
 
 local void
-win32_init_logger(MArena *arena,
-                  u32   flags_level,
-                  u32   flags_format)
+win32_init_logger_terminal(void *buf,
+                           usz   len,
+                           usz   flags)
 {
-	int bufcount;
-	if (!(flags_format & 0xF))
-		return;
-	if (!(flags_level & 0xFF))
+	if (!buf || !len)
 		return;
 
-	_glog.flags_level  = flags_level;
-	_glog.flags_format = flags_format;
+	_glog.fb_terminal.fd   = GetStdHandle(STD_OUTPUT_HANDLE);
+	_glog.fb_terminal.data = buf;
+	_glog.fb_terminal.cap  = len;
+	_glog.flags_terminal   = flags;
+}
 
-	bufcount = 0;
-	if (flags_format & LOG_FORMAT_CONSOLE)
-		bufcount++;
-	if (flags_format & LOG_FORMAT_FILE)
-		bufcount++;
-	if (flags_format & LOG_FORMAT_FILE_7Z)
-		bufcount++;
-	if (flags_format & LOG_FORMAT_NETWORK)
-		bufcount++;
+local void
+win32_init_logger_file(void *buf,
+                       usz   len,
+                       usz   fd,
+                       usz   flags)
+{
+	if (!buf || !len || !fd)
+		return;
 
-	if (bufcount == 3)
-		bufcount = 4;
-	if (flags_format & LOG_FORMAT_CONSOLE) {
-		_glog.cb.fd   = GetStdHandle(STD_OUTPUT_HANDLE);
-		_glog.cb.cap  = page_size;
-		_glog.cb.data = marena_alloc(arena, page_size, page_size);
-	}
-	if (flags_format & LOG_FORMAT_FILE) {
-		_glog.fb.cap  = page_size;
-		_glog.fb.data = marena_alloc(arena, page_size, page_size);
-	}
-	if (flags_format & LOG_FORMAT_FILE_7Z) {
-		_glog.fb.cap  = page_size;
-		_glog.fb.data = marena_alloc(arena, page_size, page_size);
-	}
-	if (flags_format & LOG_FORMAT_NETWORK) {
-		_glog.nb.cap  = page_size;
-		_glog.nb.data = marena_alloc(arena, page_size, page_size);
-	}
+	_glog.fb_file.fd   = (void *)fd;
+	_glog.flags_file   = flags;
+	_glog.fb_file.data = buf;
+	_glog.fb_file.cap  = len;
+}
+
+local void
+win32_init_logger_network(void *buf,
+                          usz   len,
+                          usz   fd,
+                          usz   flags)
+{
+	if (!buf || !len || !fd)
+		return;
+
+	_glog.fb_network.fd   = (void *)fd;
+	_glog.flags_network   = flags;
+	_glog.fb_network.data = buf;
+	_glog.fb_network.cap  = len;
 }
 
 local void
@@ -61,22 +60,19 @@ win32_log(u32 level,
 	usz                        is_assert;
 
 	__mcs_lock(&_glock_terminal, &me);
-	if (!_glog.flags_level || !_glog.flags_format)
-		return;
 
-	// TODO: Write to File
-	if (flag_has(_glog.flags_format, LOG_FORMAT_FILE) ||
-        flag_has(_glog.flags_format, LOG_FORMAT_FILE_7Z))
-	{
+	if (_glog.fb_file.data || _glog.fb_file.cap < page_size) {
+		// TODO: Write to File
+		
+	}
+	if (_glog.fb_network.data || _glog.fb_network.cap < page_size) {
+		// TODO: Send over Network; Protocol Needed!
 		
 	}
 
-	// TODO: Send over Network; Protocol Needed!
-//	if (flag_has(_glog.flags_format, LOG_FORMAT_NETWORK)) {
-//		
-//	}
-
-	if (!flag_has(_glog.flags_format, LOG_FORMAT_CONSOLE))
+	if (!_glog.fb_terminal.data || _glog.fb_terminal.cap < page_size)
+		return;
+	if (!flag_has(_glog.flags_terminal, level))
 		return;
 
 	is_assert = 0;
@@ -85,136 +81,135 @@ win32_log(u32 level,
 		flag_rem(level, LOG_LEVEL_ASSERT);
 	}
 
-	GetConsoleScreenBufferInfo(_glog.cb.fd, &csbi);
-
 	// "[Level]" + [TODO: Colors]
+	GetConsoleScreenBufferInfo(_glog.fb_terminal.fd, &csbi);
 	switch(level) {
 		case LOG_LEVEL_GOOFY: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED |
 			                                         FOREGROUND_BLUE |
 			                                         FOREGROUND_GREEN |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "==============\n", 0);
-			fb8_append_cstr(&_glog.cb, "= EASTER EGG =\n", 0);
-			fb8_append_cstr(&_glog.cb, "==============\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "==============\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= EASTER EGG =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "==============\n", 0);
 		} break;
 		case LOG_LEVEL_DEBUG: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_BLUE |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_BLUE |
 			                                         FOREGROUND_GREEN |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "=========\n", 0);
-			fb8_append_cstr(&_glog.cb, "= DEBUG =\n", 0);
-			fb8_append_cstr(&_glog.cb, "=========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "=========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= DEBUG =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "=========\n", 0);
 		} break;
 
 		case LOG_LEVEL_INFO: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_BLUE |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_BLUE |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "========\n", 0);
-			fb8_append_cstr(&_glog.cb, "= INFO =\n", 0);
-			fb8_append_cstr(&_glog.cb, "========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= INFO =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "========\n", 0);
 		} break;
 
 		case LOG_LEVEL_SUCCESS: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_GREEN |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_GREEN |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "===========\n", 0);
-			fb8_append_cstr(&_glog.cb, "= SUCCESS =\n", 0);
-			fb8_append_cstr(&_glog.cb, "===========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "===========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= SUCCESS =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "===========\n", 0);
 		} break;
 
 		case LOG_LEVEL_ANOMALLY: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED |
 			                                         FOREGROUND_BLUE);
-			fb8_append_cstr(&_glog.cb, "============\n", 0);
-			fb8_append_cstr(&_glog.cb, "= ANOMALLY =\n", 0);
-			fb8_append_cstr(&_glog.cb, "============\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "============\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= ANOMALLY =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "============\n", 0);
 		} break;
 
 		case LOG_LEVEL_WARNING: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED |
 			                                         FOREGROUND_GREEN |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "===========\n", 0);
-			fb8_append_cstr(&_glog.cb, "= WARNING =\n", 0);
-			fb8_append_cstr(&_glog.cb, "===========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "===========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= WARNING =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "===========\n", 0);
 		} break;
 
 		case LOG_LEVEL_ERROR: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED |
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED |
 			                                         FOREGROUND_INTENSITY);
-			fb8_append_cstr(&_glog.cb, "=========\n", 0);
-			fb8_append_cstr(&_glog.cb, "= ERROR =\n", 0);
-			fb8_append_cstr(&_glog.cb, "=========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "=========\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= ERROR =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "=========\n", 0);
 		} break;
 
 		case LOG_LEVEL_FATAL: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED);
-			fb8_append_cstr(&_glog.cb, "===============\n", 0);
-			fb8_append_cstr(&_glog.cb, "= FATAL ERROR =\n", 0);
-			fb8_append_cstr(&_glog.cb, "===============\n", 0);
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED);
+			fb8_append_cstr(&_glog.fb_terminal, "===============\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= FATAL ERROR =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "===============\n", 0);
 		} break;
 
 		default: {
-			SetConsoleTextAttribute(_glog.cb.fd, FOREGROUND_RED);
-			fb8_append_cstr(&_glog.cb, "==================\n", 0);
-			fb8_append_cstr(&_glog.cb, "= INTERNAL ERROR =\n", 0);
-			fb8_append_cstr(&_glog.cb, "==================\n", 0);
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, FOREGROUND_RED);
+			fb8_append_cstr(&_glog.fb_terminal, "==================\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "= INTERNAL ERROR =\n", 0);
+			fb8_append_cstr(&_glog.fb_terminal, "==================\n", 0);
 
-			SetConsoleTextAttribute(_glog.cb.fd, csbi.wAttributes);
-			fb8_append_cstr(&_glog.cb, "Must be a single level!\n", 0);
-			fb8_flush(&_glog.cb);
+			SetConsoleTextAttribute(_glog.fb_terminal.fd, csbi.wAttributes);
+			fb8_append_cstr(&_glog.fb_terminal, "Must be a single level!\n", 0);
+			fb8_flush(&_glog.fb_terminal);
 			ExitProcess(0);
 		}
 	}
 
-	fb8_flush(&_glog.cb);
-	SetConsoleTextAttribute(_glog.cb.fd, csbi.wAttributes);
+	fb8_flush(&_glog.fb_terminal);
+	SetConsoleTextAttribute(_glog.fb_terminal.fd, csbi.wAttributes);
 
 	//	"[10:00:00]"
 	GetLocalTime(&lt);
 
-	fb8_append_byte(&_glog.cb, '[');
-	fb8_append_usz(&_glog.cb, lt.wHour);
-	fb8_append_byte(&_glog.cb, ':');
-	fb8_append_usz(&_glog.cb, lt.wMinute);
-	fb8_append_byte(&_glog.cb, ':');
-	fb8_append_usz(&_glog.cb, lt.wSecond);
-	fb8_append_byte(&_glog.cb, '.');
+	fb8_append_byte(&_glog.fb_terminal, '[');
+	fb8_append_usz(&_glog.fb_terminal, lt.wHour);
+	fb8_append_byte(&_glog.fb_terminal, ':');
+	fb8_append_usz(&_glog.fb_terminal, lt.wMinute);
+	fb8_append_byte(&_glog.fb_terminal, ':');
+	fb8_append_usz(&_glog.fb_terminal, lt.wSecond);
+	fb8_append_byte(&_glog.fb_terminal, '.');
 	#if EXE_ARCH == 32
-		fb8_append_usz(&_glog.cb, lt.wMilliseconds);
+		fb8_append_usz(&_glog.fb_terminal, lt.wMilliseconds);
 		unref(time_100ns);
 		unref(ft);
 	#else
 		GetSystemTimeAsFileTime(&ft);
 		time_100ns = ((ULONGLONG)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
 		time_100ns %= 10000000;
-		fb8_append_usz(&_glog.cb, time_100ns);
+		fb8_append_usz(&_glog.fb_terminal, time_100ns);
 	#endif
-	fb8_append_byte(&_glog.cb, ']');
+	fb8_append_byte(&_glog.fb_terminal, ']');
 
-	fb8_append_lf(&_glog.cb);
-	fb8_append(&_glog.cb, msg);
+	fb8_append_lf(&_glog.fb_terminal);
+	fb8_append(&_glog.fb_terminal, msg);
 
-	fb8_append_lf(&_glog.cb);
-	fb8_append_lf(&_glog.cb);
-	fb8_flush(&_glog.cb);
+	fb8_append_lf(&_glog.fb_terminal);
+	fb8_append_lf(&_glog.fb_terminal);
+	fb8_flush(&_glog.fb_terminal);
 
 	// "file(line_num): fnname"
 	if (is_assert) {
-		fb8_append(&_glog.cb, s8("Assert: True\n"));
+		fb8_append(&_glog.fb_terminal, s8("Assert: True\n"));
 
-		fb8_append_cstr(&_glog.cb, file, 0);
-		fb8_append_byte(&_glog.cb, '(');
-		fb8_append_usz( &_glog.cb, linenum);
-		fb8_append_byte(&_glog.cb, ')');
-		fb8_append_byte(&_glog.cb, ':');
-		fb8_append_byte(&_glog.cb, ' ');
-		fb8_append_cstr(&_glog.cb, fnname, 0);
-		fb8_append_lf(&_glog.cb);
-		fb8_append_lf(&_glog.cb);
+		fb8_append_cstr(&_glog.fb_terminal, file, 0);
+		fb8_append_byte(&_glog.fb_terminal, '(');
+		fb8_append_usz( &_glog.fb_terminal, linenum);
+		fb8_append_byte(&_glog.fb_terminal, ')');
+		fb8_append_byte(&_glog.fb_terminal, ':');
+		fb8_append_byte(&_glog.fb_terminal, ' ');
+		fb8_append_cstr(&_glog.fb_terminal, fnname, 0);
+		fb8_append_lf(&_glog.fb_terminal);
+		fb8_append_lf(&_glog.fb_terminal);
 
-		fb8_flush(&_glog.cb);
+		fb8_flush(&_glog.fb_terminal);
 	}
 
 	__mcs_unlock(&_glock_terminal, &me);
@@ -544,6 +539,7 @@ win32_crash_handler(PEXCEPTION_POINTERS ExceptionInfo)
 
 	fb.data = buffer;
 	fb.cap  = KB(4);
+	fb.fd   = GetStdHandle(STD_OUTPUT_HANDLE); 
 
 	fb8_append(&fb, s8("A Crash Has Ocurred!"));
 	fb8_append_lf(&fb);

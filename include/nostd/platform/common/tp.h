@@ -192,7 +192,7 @@ tp_init_generic(TPData *tp,
 		tps_tosend->quit           = tps.quit;
 
 		tps_tosend->entry = tp_entry_generic;
-		thread_create(tp_entry_generic, tps_tosend, stack_size);
+		thread_create((void*)tp_entry_generic, tps_tosend, stack_size);
 	}
 
 	tp->thread_count = thread_count;
@@ -278,6 +278,7 @@ tp_entry_generic(TPStack *s)
 
 	tp_entry_close(s);
 	thread_exit(0);
+	return 0;
 }
 
 local void

@@ -26,6 +26,7 @@ _entry(int    argc,
 	thread_wait     = futex_wait;
 	thread_wake_one = futex_wake_one;
 	thread_wake_all = futex_wake_all;
+	thread_create   = linux_thread_create;
 	thread_exit     = sys_exit;
 	mlock_init      = mlock_init_mcslock;
 	mlock_acquire   = mlock_acquire_mcslock;
@@ -33,7 +34,6 @@ _entry(int    argc,
 	tp_post         = tp_post_generic;
 	tp_quit         = tp_quit_generic;
 	tp_wait         = tp_wait_generic;
-	thread_create   = linux_thread_create;
 
 	rval = cmain(arg, mem);
 	return rval;

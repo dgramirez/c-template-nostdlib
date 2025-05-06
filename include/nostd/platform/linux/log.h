@@ -9,7 +9,7 @@ linux_init_logger_terminal(void *buf,
 	if (!buf || !len)
 		return;
 
-	_glog.fb_file.fd       = 0;
+	_glog.fb_terminal.fd   = 0;
 	_glog.fb_terminal.data = buf;
 	_glog.fb_terminal.cap  = len;
 	_glog.flags_terminal   = flags;
