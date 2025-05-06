@@ -26,7 +26,7 @@ fb8_write(fb8 *b)
 }
 
 local void *
-linux_thread_create(void *addr, void *args, u32 stack_size) {
+linux_thread_create(void *addr, void *args, usz stack_size) {
 	unref(addr);
 	unref(stack_size);
 	return (void *)sys_clone(0x50f00, args, 0, 0, 0);

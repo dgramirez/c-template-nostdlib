@@ -278,7 +278,10 @@ tp_entry_generic(TPStack *s)
 
 	tp_entry_close(s);
 	thread_exit(0);
+
+#ifdef _WIN32
 	return 0;
+#endif
 }
 
 local void
