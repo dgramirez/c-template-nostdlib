@@ -56,6 +56,8 @@ Win32Main(b8 args, b8 mem)
 
 	tp_wait(&tpdata, 0);
 	tp_quit(&tpdata);
+
+	Sleep(3000);
 	unref(args);
 	return 0;
 }

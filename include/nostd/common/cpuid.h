@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
 	union {
 		CPUID_AuthenticAMD *amd;
+		CPUID_GenuineIntel *intel;
 		void               *cpu;
 	};
 	CPUIDVendorID id;
@@ -62,12 +63,12 @@ typedef struct {
 
 typedef struct {
 	CPUIDFeatures features;
-	usz            cache_l1i;
-	usz            cache_l1d;
-	usz            cache_l2;
-	usz            cache_l3;
-	usz            pcores;
-	usz            lcores;
+	usz           cache_l1i;
+	usz           cache_l1d;
+	usz           cache_l2;
+	usz           cache_l3;
+	usz           pcores;
+	usz           lcores;
 } CPUID;
 
 #endif // INCLUDE_NOSTD_COMMON_CPUID_H

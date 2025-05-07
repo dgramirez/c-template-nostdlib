@@ -1,6 +1,12 @@
 #ifndef INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
 #define INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
 
+#define CPUID_TOTAL_BUFFER(tcache)                 \
+	((usz)tcache->cache_line_size + 1) *           \
+	((usz)tcache->cache_physical_partitions + 1) * \
+	((usz)tcache->cache_number_of_ways + 1) *      \
+	((usz)tcache->cache_number_ways_set_associative + 1)
+
 extern void
 cpuid_native(unsigned int *eax,
              unsigned int *ebx,
@@ -65,7 +71,7 @@ cpuid_get_vendor_id(CPUIDVendor *v)
 }
 
 local void
-cpuid_fill_amd(CPUID_AuthenticAMD *amd)
+cpuid_fill_authenticamd(CPUID_AuthenticAMD *amd)
 {
 	CPUID_AuthenticAMD_0x8000001Dh topology_cache = {0};
 	i32 count;
@@ -171,7 +177,141 @@ cpuid_fill_amd(CPUID_AuthenticAMD *amd)
 }
 
 local void
-cpuid_setup_amd(CPUID *out) {
+cpuid_fill_genuineintel(CPUID_GenuineIntel *intel) {
+	CPUIDRegisters regs;
+	usz max_arena_count;
+	u32 count;
+	u32 max_count;
+	u32 max_fn;
+
+	// CPUID Check
+	if (!has_cpuid()) {
+		memzerou(intel, sizeof(CPUID_GenuineIntel));
+		return;
+	}
+
+	// Standard
+	cpuid_exec_vendor((CPUIDVendor *)&intel->vendor, 0x00000000);
+	max_fn = imin(intel->vendor.eax, 0x0000001F);
+	max_arena_count = (intel->mem_enumerations.end - intel->mem_enumerations.start) >> 4;
+	switch(max_fn) {
+		case 0x0000001F: {
+			max_count = 0;
+			do {
+				regs.eax = 0x0000001F;
+				regs.ecx = max_count++;
+				cpuid_exec(&regs, regs.eax, regs.ecx);
+			} while ((regs.ecx & 0x0000FF00) != 0);
+			if ((max_count > 1) && (max_count <= max_arena_count)) {
+				intel->topology_cpu2 = marena_alloc(&intel->mem_enumerations,
+													max_count * sizeof(CPUID_GenuineIntel_0x0000001Fh),
+													word_size);
+				count = 0;
+				do {
+					intel->topology_cpu2[count].eax = 0x0000001F;
+					intel->topology_cpu2[count].ecx = count;
+					cpuid_exec(&intel->topology_cpu2[count], 0x0000001F, count);
+				} while (++count < max_count);
+
+				max_arena_count -= max_count;
+			}
+		}
+		case 0x0000001E:
+		case 0x0000001D:
+		case 0x0000001C:
+		case 0x0000001B:
+		case 0x0000001A:
+		case 0x00000019:
+		case 0x00000018:
+		case 0x00000017:
+		case 0x00000016:
+		case 0x00000015:
+		case 0x00000014:
+		case 0x00000013:
+		case 0x00000012:
+		case 0x00000011:
+		case 0x00000010:
+		case 0x0000000F:
+		case 0x0000000E:
+		case 0x0000000D:
+		case 0x0000000C:
+		case 0x0000000B: {
+			max_count = 0;
+			do {
+				regs.eax = 0x0000000B;
+				regs.ecx = max_count++;
+				cpuid_exec(&regs, regs.eax, regs.ecx);
+			} while ((regs.ecx & 0x0000FF00) != 0);
+			if ((max_count > 1) && (max_count <= max_arena_count)) {
+				intel->topology_cpu = marena_alloc(&intel->mem_enumerations,
+													max_count * sizeof(CPUID_GenuineIntel_0x0000000Bh),
+													word_size);
+				count = 0;
+				do {
+					intel->topology_cpu[count].eax = 0x0000000B;
+					intel->topology_cpu[count].ecx = count;
+					cpuid_exec(&intel->topology_cpu[count], 0x0000000B, count);
+				} while (++count < max_count);
+
+				max_arena_count -= max_count;
+			}
+		}
+		case 0x0000000A: cpuid_exec(&intel->performance_monitoring, 0x0000000A, 0);
+		case 0x00000009:
+		case 0x00000008:
+		case 0x00000007: {
+			// TODO: Add Support for sub-leaf 1 & sub-leaf 2
+			 cpuid_exec(&intel->structured_features, 0x00000007, 0);
+		}
+		case 0x00000006:
+		case 0x00000005:
+		case 0x00000004: {
+			max_count = 0;
+			do {
+				regs.eax = 0x00000004;
+				regs.ecx = max_count++;
+				cpuid_exec(&regs, regs.eax, regs.ecx);
+			} while ((regs.eax & 0x0000001F) != 0);
+
+			if ((max_count > 1) && (max_count <= max_arena_count)) {
+				intel->topology_cache = marena_alloc(&intel->mem_enumerations,
+													max_count * sizeof(CPUID_GenuineIntel_0x00000004h),
+													word_size);
+
+				count = 0;
+				do {
+					intel->topology_cache[count].eax = 0x00000004;
+					intel->topology_cache[count].ecx = count;
+					cpuid_exec(&intel->topology_cache[count], 0x00000004, count);
+				} while (++count < max_count);
+
+				max_arena_count -= max_count;
+			}
+		}
+		case 0x00000003: cpuid_exec(&intel->psn, 0x00000003, 0);
+		case 0x00000002: cpuid_exec(&intel->cache_tlb, 0x00000002, 0);
+		case 0x00000001: cpuid_exec(&intel->identifier_and_features, 0x00000001, 0);
+		default: break;
+	}
+
+	cpuid_exec_vendor((CPUIDVendor *)&intel->ext_fn, 0x80000000);
+	max_fn = imin(intel->ext_fn.eax, 0x80000008);
+	switch(max_fn) {
+		case 0x80000008: cpuid_exec(&intel->addr_bits_and_wbnoinvd, 0x80000008, 0);
+		case 0x80000007: cpuid_exec(&intel->invtsc, 0x80000007, 0);
+		case 0x80000006: cpuid_exec(&intel->l2, 0x80000006, 0);
+		case 0x80000005:
+		case 0x80000004: cpuid_exec(&intel->cpu_name_2_2, 0x80000004, 0);
+		case 0x80000003: cpuid_exec(&intel->cpu_name_1_2, 0x80000003, 0);
+		case 0x80000002: cpuid_exec(&intel->cpu_name_0_2, 0x80000002, 0);
+		case 0x80000001: cpuid_exec(&intel->identifier_and_features_ext, 0x80000001, 0);
+		default: break;
+	}
+}
+
+local void
+cpuid_setup_amd(CPUID *out)
+{
 	CPUID_AuthenticAMD_0x8000001Dh *topology_cache;
 
 	if (_cpuid.amd->vendor.eax >= 0x00000001) {
@@ -203,18 +343,11 @@ cpuid_setup_amd(CPUID *out) {
 
 	if (_cpuid.amd->vendor_ext.eax >= 0x80000008) {
 		out->pcores = _cpuid.amd->cpu_capacity_and_features_ext.pcores + 1;
-
-//		out->rdpru  = _cpuid.amd->cpu_capacity_and_features_ext.rdpru;
 	}
 
 	if (_cpuid.amd->vendor_ext.eax >= 0x8000001E)
 		out->pcores /= (_cpuid.amd->topology_cpu.threads_per_compute_unit + 1);
 
-	#define CPUID_TOTAL_BUFFER(tcache)                 \
-		((usz)tcache->cache_line_size + 1) *           \
-		((usz)tcache->cache_physical_partitions + 1) * \
-		((usz)tcache->cache_number_of_ways + 1) *      \
-		((usz)tcache->cache_number_ways_set_associative + 1)
 	if (_cpuid.amd->vendor_ext.eax >= 0x8000001D) {
 		topology_cache = &_cpuid.amd->topology_cache[0];
 		while(topology_cache && topology_cache->cache_type != 0) {
@@ -250,10 +383,82 @@ cpuid_setup_amd(CPUID *out) {
 		if (_cpuid.amd->vendor_ext.eax >= 0x80000006) {
 			out->cache_l2 = (usz)_cpuid.amd->l2_and_l3.l2_cache_size_in_kb << 10;
 			out->cache_l3 = (usz)_cpuid.amd->l2_and_l3.l3_cache_size_in_kb << 10;
-			
 		}
 	}
-	#undef CPUID_TOTAL_BUFFER
+}
+
+local void
+cpuid_setup_intel(CPUID *out)
+{
+	CPUID_GenuineIntel_0x00000004h *topology_cache;
+
+	if (_cpuid.intel->vendor.eax >= 0x00000001) {
+		out->lcores = _cpuid.intel->identifier_and_features.lcpu_count;
+
+		out->features.sse    = _cpuid.intel->identifier_and_features.sse;
+		out->features.sse2   = _cpuid.intel->identifier_and_features.sse2;
+		out->features.sse3   = _cpuid.intel->identifier_and_features.sse3;
+		out->features.ssse3  = _cpuid.intel->identifier_and_features.ssse3;
+		out->features.sse4_1 = _cpuid.intel->identifier_and_features.sse4_1;
+		out->features.sse4_2 = _cpuid.intel->identifier_and_features.sse4_2;
+		out->features.mmx    = _cpuid.intel->identifier_and_features.mmx;
+		out->features.avx    = _cpuid.intel->identifier_and_features.avx;
+		out->features.fma    = _cpuid.intel->identifier_and_features.fma;
+		out->features.tsc    = _cpuid.intel->identifier_and_features.tsc;
+	}
+
+	if (_cpuid.intel->vendor.eax >= 0x00000007) {
+		out->features.avx2    = _cpuid.intel->structured_features.avx2;
+		out->features.avx512f = _cpuid.intel->structured_features.avx512f;
+	}
+
+	if (_cpuid.intel->vendor.eax >= 0x0000000A) {
+		if (_cpuid.intel->performance_monitoring.version > 0)
+			out->features.rdpmc = 1;
+	}
+
+	if (_cpuid.intel->ext_fn.eax >= 0x80000001)
+		out->features.rdtscp = _cpuid.intel->identifier_and_features_ext.rdtscp;
+
+	if (_cpuid.intel->vendor.eax >= 0x0000001F) {
+		// TODO: This is wrong, fix by actually using the cpuid fn structure.
+		out->pcores = _cpuid.intel->identifier_and_features.lcpu_count >> 1;;
+	}
+	else if (_cpuid.intel->vendor.eax >= 0x0000001B) {
+		// TODO: This is wrong, fix by actually using the cpuid fn structure.
+		out->pcores = _cpuid.intel->identifier_and_features.lcpu_count >> 1;;
+	}
+	else if (_cpuid.intel->vendor.eax >= 0x00000004) {
+		out->pcores = _cpuid.intel->topology_cache[0].pcpu_max_ids;
+	}
+
+	if (_cpuid.intel->vendor.eax >= 0x00000004) {
+		topology_cache = &_cpuid.intel->topology_cache[0];
+		while(topology_cache && topology_cache->cache_type != 0) {
+			switch(topology_cache->cache_level) {
+				case 0: break;
+				case 1: {
+					if (topology_cache->cache_type == 1)  { // Data
+						out->cache_l1d = CPUID_TOTAL_BUFFER(topology_cache);
+					}
+					else if (topology_cache->cache_type == 2) { // Instruction
+						out->cache_l1i = CPUID_TOTAL_BUFFER(topology_cache);
+					}
+				} break;
+				case 2: {
+					out->cache_l2 = CPUID_TOTAL_BUFFER(topology_cache);
+					
+				} break;
+				case 3: {
+					out->cache_l3 = CPUID_TOTAL_BUFFER(topology_cache);
+				} break;
+				default: break;
+			}
+
+			topology_cache++;
+		}
+
+	}
 
 }
 
@@ -275,11 +480,20 @@ cpuid_init() {
 			_cpuid.cpu = mfreelist_alloc(&_sysfl,
 			                             sizeof(CPUID_AuthenticAMD),
 			                             16);
-			cpuid_fill_amd(_cpuid.amd);
+			cpuid_fill_authenticamd(_cpuid.amd);
 		} break;
 
 		case CPUID_VENDOR_GenuineIntel: {
-			
+			_cpuid.cpu = mfreelist_alloc(&_sysfl,
+			                             sizeof(CPUID_GenuineIntel),
+			                             16);
+
+			marena_init(&_cpuid.intel->mem_enumerations,
+			            mfreelist_alloc(&_sysfl, page_size, page_size),
+			            page_size,
+			            8);
+
+			cpuid_fill_genuineintel(_cpuid.intel);
 		} break;
 
 		case CPUID_VENDOR_ERROR:
@@ -301,12 +515,8 @@ cpuid_setup(CPUID *out) {
 
 	id = cpuid_get_vendor_id(&v);
 	switch(id) {
-		case CPUID_VENDOR_AuthenticAMD: {
-			cpuid_setup_amd(out);
-		} break;
-
-		case CPUID_VENDOR_GenuineIntel: {
-		} break;
+		case CPUID_VENDOR_AuthenticAMD: cpuid_setup_amd(out);   break;
+		case CPUID_VENDOR_GenuineIntel: cpuid_setup_intel(out); break;
 
 		case CPUID_VENDOR_ERROR:
 		case CPUID_VENDOR_UNKNOWN:
@@ -314,5 +524,6 @@ cpuid_setup(CPUID *out) {
 	}
 }
 
+#undef CPUID_TOTAL_BUFFER
 #endif // INCLUDE_NOSTD_PLATFORM_COMMON_CPUID_H
 

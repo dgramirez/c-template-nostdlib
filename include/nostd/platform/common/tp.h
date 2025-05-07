@@ -75,7 +75,7 @@ tp_init_generic(TPData *tp,
 	else if (_cpuid.id == CPUID_VENDOR_GenuineIntel) {
 		thread_count = iclamp(1,
 		                      thread_count,
-		                      4);
+		                      _cpuid.intel->identifier_and_features.lcpu_count);
 	}
 	else {
 		thread_count = iclamp(1,

@@ -25,6 +25,8 @@ match =WIN64, PLATFORM {
 
 		popq rbx
 		ret
+
+	public has_cpuid
 }
 
 match =WIN32, PLATFORM {
@@ -56,6 +58,8 @@ match =WIN32, PLATFORM {
 		pop ebx
 
 		ret
+
+	public has_cpuid as "_has_cpuid"
 }
 
 match =LINUX, PLATFORM {
@@ -85,10 +89,11 @@ match =LINUX, PLATFORM {
 
 		popq rbx
 		ret
+
+	public has_cpuid
 }
 
 ; Function from AMD Documentation with slight modifications
-public has_cpuid
 has_cpuid:
 	use32              ; Set for 32-Bits
 

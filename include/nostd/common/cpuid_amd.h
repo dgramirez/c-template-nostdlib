@@ -366,7 +366,7 @@ typedef struct {
 
 /////////////////////////////////////
 // AuthenticAMD Extended Functions //
-// 0x80000001 - 0x80000026h        //
+// 0x80000000 - 0x80000026h        //
 /////////////////////////////////////
 typedef union {
 	char vendor[16];

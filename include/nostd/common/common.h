@@ -5,6 +5,7 @@
 #include "../core/core.h"
 
 #include "cpuid_amd.h"
+#include "cpuid_intel.h"
 #include "cpuid.h"
 #include "log.h"
 #include "threads.h"
