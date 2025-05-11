@@ -82,6 +82,7 @@ win32_setup_platform_data(PlatformData *pdata,
 	pdata->tp_post         = tp_post_generic;
 	pdata->tp_quit         = tp_quit_generic;
 	pdata->tp_wait         = tp_wait_generic;
+	cpuid_setup(&pdata->cpuid);
 
 	// Others
 	pdata->tlock_terminal = &_glock_terminal;

@@ -14,19 +14,19 @@ cpuid_native(unsigned int *eax,
              unsigned int *edx);
 
 extern i32
-has_cpuid();
+has_cpuid(void);
 
 extern u32
-rdtsc_intel();
+rdtsc_intel(void);
 
 extern u32
-rdtsc_amd();
+rdtsc_amd(void);
 
 extern u32
-rdtscp_any();
+rdtscp_any(void);
 
 local usz
-tsc_get_cpu_freq()
+tsc_get_cpu_freq(void)
 {
 	usz cpu_timer[3] = {0};
 	usz os_timer[3]  = {0};

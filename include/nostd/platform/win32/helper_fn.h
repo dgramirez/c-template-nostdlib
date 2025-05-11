@@ -61,7 +61,7 @@ Win32ThreadCreate(void *addr,
 }
 
 local usz
-Win32GetFreq()
+Win32GetFreq(void)
 {
 	LARGE_INTEGER f = {0};
 	QueryPerformanceFrequency(&f);
@@ -74,7 +74,7 @@ Win32GetFreq()
 }
 
 local usz
-Win32GetCounter()
+Win32GetCounter(void)
 {
 	LARGE_INTEGER c = {0};
 	QueryPerformanceCounter(&c);
