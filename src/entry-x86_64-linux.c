@@ -34,6 +34,9 @@ _entry(int    argc,
 	tp_post         = tp_post_generic;
 	tp_quit         = tp_quit_generic;
 	tp_wait         = tp_wait_generic;
+	get_cpu_freq    = tsc_get_cpu_freq;
+	get_os_freq     = linux_get_freq;
+	get_os_counter  = linux_get_counter;
 
 	rval = cmain(arg, mem);
 	return rval;

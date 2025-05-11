@@ -60,5 +60,31 @@ Win32ThreadCreate(void *addr,
 	return CreateThread(0, stack_size, a, args, 0, 0);
 }
 
+local usz
+Win32GetFreq()
+{
+	LARGE_INTEGER f = {0};
+	QueryPerformanceFrequency(&f);
+
+#if ARCH_EXE == 64
+	return f.QuadPart;
+#else
+	return f.LowPart;
+#endif
+}
+
+local usz
+Win32GetCounter()
+{
+	LARGE_INTEGER c = {0};
+	QueryPerformanceCounter(&c);
+
+#if ARCH_EXE == 64
+	return c.QuadPart;
+#else
+	return c.LowPart;
+#endif
+}
+
 #endif // INCLUDE_PLATFORM_WIN32_HELPER_FN_H
 

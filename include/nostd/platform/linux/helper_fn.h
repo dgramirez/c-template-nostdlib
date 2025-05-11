@@ -26,10 +26,27 @@ fb8_write(fb8 *b)
 }
 
 local void *
-linux_thread_create(void *addr, void *args, usz stack_size) {
+linux_thread_create(void *addr,
+                    void *args,
+                    usz stack_size)
+{
 	unref(addr);
 	unref(stack_size);
 	return (void *)sys_clone(0x50f00, args, 0, 0, 0);
+}
+
+local usz
+linux_get_freq()
+{
+	return 1000000000;
+}
+
+local usz
+linux_get_counter()
+{
+	struct timespec ts = {0};
+	sys_clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (ts.tv_sec * linux_get_freq()) + ts.tv_nsec;
 }
 
 #endif // INCLUDE_PLATFORM_LINUX_HELPER_FN_H

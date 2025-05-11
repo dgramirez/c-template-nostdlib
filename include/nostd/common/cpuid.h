@@ -71,5 +71,31 @@ typedef struct {
 	usz           lcores;
 } CPUID;
 
+typedef enum {
+	CPU_TIMER_START   = 0,
+	CPU_TIMER_END     = 1,
+	CPU_TIMER_ELAPSED = 2
+} CPUID_CPUTimer;
+
+declfn(u32,
+       get_tsc,
+       return 0;,
+	   void);
+
+declfn(usz,
+       get_cpu_freq,
+       return 0;,
+	   void);
+
+declfn(usz,
+       get_os_freq,
+       return 0;,
+	   void);
+
+declfn(usz,
+       get_os_counter,
+       return 0;,
+	   void);
+
 #endif // INCLUDE_NOSTD_COMMON_CPUID_H
 

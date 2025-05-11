@@ -16,6 +16,40 @@ cpuid_native(unsigned int *eax,
 extern i32
 has_cpuid();
 
+extern u32
+rdtsc_intel();
+
+extern u32
+rdtsc_amd();
+
+extern u32
+rdtscp_any();
+
+local usz
+tsc_get_cpu_freq()
+{
+	usz cpu_timer[3] = {0};
+	usz os_timer[3]  = {0};
+	usz wait;
+
+	wait = get_os_freq() / 1000;
+	cpu_timer[CPU_TIMER_START] = get_tsc();
+	os_timer[CPU_TIMER_START]  = get_os_counter();
+	while (os_timer[CPU_TIMER_ELAPSED] < wait) {
+		os_timer[CPU_TIMER_END]     = get_os_counter();
+		os_timer[CPU_TIMER_ELAPSED] = os_timer[CPU_TIMER_END] -
+		                              os_timer[CPU_TIMER_START];
+	}
+	cpu_timer[CPU_TIMER_END]     = get_tsc();
+	cpu_timer[CPU_TIMER_ELAPSED] = cpu_timer[CPU_TIMER_END] -
+	                               cpu_timer[CPU_TIMER_START];
+
+	if (os_timer[CPU_TIMER_ELAPSED])
+		return get_os_freq() * cpu_timer[CPU_TIMER_ELAPSED] / os_timer[CPU_TIMER_ELAPSED];
+
+	return 0;
+}
+
 local void
 cpuid_exec(void *out,
            u32   cpuid_fn,
@@ -521,6 +555,19 @@ cpuid_setup(CPUID *out) {
 		case CPUID_VENDOR_ERROR:
 		case CPUID_VENDOR_UNKNOWN:
 		default: break;
+	}
+
+	if (out->features.rdtscp) {
+		get_tsc = rdtscp_any;
+		_cpu_freq = get_cpu_freq();
+	}
+	else if (out->features.tsc) {
+		if (id == CPUID_VENDOR_GenuineIntel)
+			get_tsc = rdtsc_intel;
+		else
+			get_tsc = rdtsc_amd;
+
+		_cpu_freq = get_cpu_freq();
 	}
 }
 

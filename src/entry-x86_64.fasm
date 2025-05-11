@@ -14,6 +14,7 @@ match =LINUX, PLATFORM {
 	include "platform/syscall-x86_64-linux.fasm"
 	include "cpu/atomics.fasm"
 	include "cpu/cpuid-x86_64.fasm"
+	include "cpu/profiling.fasm"
 
 	public start as '_start'
 	start:
@@ -43,6 +44,7 @@ match =WIN64, PLATFORM {
 	section '.text' code readable executable align 16
 	include "cpu/cpuid-x86_64.fasm"
 	include "cpu/atomics.fasm"
+	include "cpu/profiling.fasm"
 }
 match =WIN32, PLATFORM {
 	format MS COFF
@@ -54,5 +56,6 @@ match =WIN32, PLATFORM {
 	section '.text' code readable executable align 16
 	include "cpu/cpuid-x86_64.fasm"
 	include "cpu/atomics.fasm"
+	include "cpu/profiling.fasm"
 }
 

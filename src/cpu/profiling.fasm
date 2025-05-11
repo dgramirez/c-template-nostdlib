@@ -1,0 +1,43 @@
+; Notes:
+;   This isn't the best way to set-up profiling I understand. The best way
+;   is to use intrinsics, or somehow embed the asm where you want to
+;   profile. One can argue this should be done for all fasm code in this
+;   repository.
+;
+;   All that I will say about that is, If I reach a point in where I need to
+;   do such thing, that will be the time in where this project gets
+;   restructured to do so, removing FASM and replacing it with either
+;   MASM (Windows) or straight inlining (Linux).
+
+match =LINUX, PLATFORM {
+	public rdtsc_intel
+	public rdtsc_amd
+	public rdtscp_any
+}
+
+match =WIN64, PLATFORM {
+	public rdtsc_intel
+	public rdtsc_amd
+	public rdtscp_any
+}
+
+match =WIN32, PLATFORM {
+	public rdtsc_intel as '@rdtsc_intel@0'
+	public rdtsc_amd   as '@rdtsc_amd@0'
+	public rdtscp_any  as '@rdtsc_any@0'
+}
+
+rdtsc_intel:
+	lfence
+	rdtsc
+	ret
+
+rdtsc_amd:
+	mfence
+	rdtsc
+	ret
+
+rdtscp_any:
+	rdtscp
+	ret
+

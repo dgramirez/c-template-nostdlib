@@ -30,6 +30,9 @@ _start() {
 	tp_post         = tp_post_generic;
 	tp_quit         = tp_quit_generic;
 	tp_wait         = tp_wait_generic;
+	get_cpu_freq    = tsc_get_cpu_freq;
+	get_os_freq     = Win32GetFreq;
+	get_os_counter  = Win32GetCounter;
 
 	rval = Win32Main(arg, mem);
 	ExitProcess(rval);
