@@ -188,6 +188,13 @@
 #define __nostd_memcmp(dst, src, size)  memcmpu(dst, src, size)
 #define __nostd_memeq(dst, src, size)   memequ(dst, src, size)
 #define __nostd_memzero(dst, size)      memzerou(dst, size)
+#define __nostd_memset(dst, val, size)  memsetu(dst, val, size)
+
+//////////////////////////
+// Other Define Helpers //
+//////////////////////////
+#define _def_cat(x, y) x##y
+#define  def_cat(x, y) _def_cat(x, y)
 
 #endif // INCLUDE_NOSTD_CORE_DEFINE_H
 
