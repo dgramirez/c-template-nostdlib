@@ -1,5 +1,5 @@
-#ifndef INCLUDE_PLATFORM_APP_RELATIONSHIP_H
-#define INCLUDE_PLATFORM_APP_RELATIONSHIP_H
+#ifndef INCLUDE_COMPILER_NOSTD_FIXES_H
+#define INCLUDE_COMPILER_NOSTD_FIXES_H
 
 // Note: To future self, this is just an example. This **should** be
 //       expanded to solve "Platform-To-App" problems.
@@ -17,26 +17,6 @@
 //       can check to see both how many messages sent from previous check
 //       and parse through them (either all, bulk, or single) to update the
 //       client.
-typedef void *FdStdOut;
-
-typedef struct {
-	CPUID             cpuid;
-	b8                bufapp;
-	PFN_logsz         logsz;
-	PFN_logs8         logs8;
-	PFN_os_write      os_write;
-	PFN_mlock_init    mlock_init;
-	PFN_mlock_acquire mlock_acquire;
-	PFN_mlock_release mlock_release;
-	PFN_mlock_free    mlock_free;
-	PFN_tp_post       tp_post;
-	PFN_tp_wait       tp_wait;
-	PFN_tp_quit       tp_quit;
-	TLock             tlock_terminal;
-	FdStdOut          std_out;
-	i32               run_app;
-	TPData           *tp_data;
-} PlatformData;
 
 #ifdef _MSC_VER
 	int _fltused;
@@ -67,5 +47,5 @@ typedef struct {
 	int _tls_index = 0;
 #endif
 
-#endif // INCLUDE_PLATFORM_APP_RELATIONSHIP_H
+#endif // INCLUDE_COMPILER_NOSTD_FIXES_H
 

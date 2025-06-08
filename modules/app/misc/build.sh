@@ -2,6 +2,7 @@
 ROOT="$(dirname $(dirname $(realpath $0))..)"
 SRC="${ROOT}/src"
 INC="${ROOT}/../../include"
+MODINC="${ROOT}/include"
 
 clean_obj() {
 		cd ${SRC}
@@ -201,7 +202,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -O0    -g \
 		-D_DEBUG \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_DBG}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -224,7 +225,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -Ofast \
 		-D_RELEASE \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_REL}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -246,7 +247,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -Ofast -g \
 		-D_DEBUG -D_RELEASE \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_DBR}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}

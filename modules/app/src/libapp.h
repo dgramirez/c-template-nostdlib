@@ -2,6 +2,7 @@
 #define SRC_APP_LIBAPP_H
 
 #include "nostd.h"
+#include "cross_app.h"
 
 global PlatformData *g_platform;
 global TLock         tlock_terminal;

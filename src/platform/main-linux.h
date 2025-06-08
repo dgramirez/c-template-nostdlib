@@ -2,7 +2,7 @@
 #define SRC_MAIN_LINUX_H
 
 #include "nostdp.h"
-
+#include "app/include/cross_app.h"
 
 ////////////////////
 // Platform Setup //

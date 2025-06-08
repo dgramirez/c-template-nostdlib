@@ -2,6 +2,7 @@
 ROOT="$(dirname $(dirname $(realpath $0))..)"
 SRC="${ROOT}/src"
 INC="${ROOT}/include"
+MODINC="${ROOT}/modules"
 
 clean_obj() {
 		cd ${SRC}
@@ -202,7 +203,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -O0    -g \
 		    -D_DEBUG \
-		    -I "${INC}" \
+		    -I "${INC}" -I "${MODINC}" \
 		    -o "${OUT_DBG}/template-compile-only"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -212,7 +213,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -O0    -g \
 		-D_DEBUG -DUSING_LIBC -lc \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_DBG}/template"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -235,7 +236,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast \
 		    -D_RELEASE \
-		    -I "${INC}" \
+		    -I "${INC}" -I "${MODINC}" \
 		    -o "${OUT_REL}/template-compile-only"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -245,7 +246,7 @@ if [[ "${COMPILE}" == "2" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_RELEASE -DUSING_LIBC -lc \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_REL}/template"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -267,7 +268,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		    -Wall -Wno-unused-function -Ofast -g \
 		    -D_DEBUG -D_RELEASE \
-		    -I "${INC}" \
+		    -I "${INC}" -I "${MODINC}" \
 		    -o "${OUT_DBR}/template-compile-only"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -277,7 +278,7 @@ if [[ "${COMPILE}" == "4" ]]; then
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
 		-Wall -Wno-unused-function -Ofast \
 		-D_DEBUG -D_RELEASE -DUSING_LIBC -lc -g \
-		-I "${INC}" \
+		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_DBR}/template"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
@@ -288,3 +289,4 @@ if [[ "${COMPILE}" == "4" ]]; then
 
 fi
 
+bash ${ROOT}/modules/app/misc/build.sh ${1}
