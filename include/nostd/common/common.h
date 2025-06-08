@@ -10,7 +10,7 @@
 #include "log.h"
 #include "threads.h"
 
-#include "par.h"
+#include "compiler_nostd_fixes.h"
 
 #endif // INCLUDE_NOSTD_COMMON_COMMON_H
 
