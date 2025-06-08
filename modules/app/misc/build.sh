@@ -1,7 +1,7 @@
 #!/bin/bash
 ROOT="$(dirname $(dirname $(realpath $0))..)"
 SRC="${ROOT}/src"
-INC="${ROOT}/include"
+INC="${ROOT}/../../include"
 
 clean_obj() {
 		cd ${SRC}
@@ -172,7 +172,7 @@ if [[ "${CC_PLT}" == "" ]]; then
 	CC_PLT=${CC}
 fi
 
-OUT="${ROOT}/out"
+OUT="${ROOT}/../../out"
 if [[ ! -d ${OUT} ]]; then
 	mkdir "${OUT}"
 fi
@@ -187,7 +187,6 @@ OUT_REL=${OUT_CC}/release
 OUT_DBR=${OUT_CC}/debug-release
 
 cd "${SRC}"
-fasm entry-x86_64.fasm -d PLATFORM=LINUX
 
 COMPILE=$(( BUILD & 1 ))
 if [[ "${COMPILE}" == "1" ]]; then
@@ -198,22 +197,12 @@ if [[ "${COMPILE}" == "1" ]]; then
 		mkdir "${OUT_DBG}"
 	fi
 
-	echo "Platform Compilation Test: Debug"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		    -Wall -Wno-unused-function -O0    -g \
-		    -D_DEBUG \
-		    -I "${INC}" \
-		    -o "${OUT_DBG}/template-compile-only"
-	if [[ ! ${?} == "0" ]]; then
-		exit ${?}
-	fi
-
-	echo "Platform Compilation: Debug"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	echo "Application Compilation: Debug"
+	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -O0    -g \
-		-D_DEBUG -DUSING_LIBC -lc \
+		-D_DEBUG \
 		-I "${INC}" \
-		-o "${OUT_DBG}/template"
+		-o "${OUT_DBG}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
 	fi
@@ -231,22 +220,12 @@ if [[ "${COMPILE}" == "2" ]]; then
 		mkdir "${OUT_REL}"
 	fi
 
-	echo "Platform Compilation Test: Release"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		    -Wall -Wno-unused-function -Ofast \
-		    -D_RELEASE \
-		    -I "${INC}" \
-		    -o "${OUT_REL}/template-compile-only"
-	if [[ ! ${?} == "0" ]]; then
-		exit ${?}
-	fi
-
-	echo "Platform Compilation: Release"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
+	echo "Application Compilation: Release"
+	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
 		-Wall -Wno-unused-function -Ofast \
-		-D_RELEASE -DUSING_LIBC -lc \
+		-D_RELEASE \
 		-I "${INC}" \
-		-o "${OUT_REL}/template"
+		-o "${OUT_REL}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
 	fi
@@ -263,22 +242,12 @@ if [[ "${COMPILE}" == "4" ]]; then
 		mkdir "${OUT_DBR}"
 	fi
 
-	echo "Platform Compilation Test: Debug-Release"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		    -Wall -Wno-unused-function -Ofast -g \
-		    -D_DEBUG -D_RELEASE \
-		    -I "${INC}" \
-		    -o "${OUT_DBR}/template-compile-only"
-	if [[ ! ${?} == "0" ]]; then
-		exit ${?}
-	fi
-
-	echo "Platform Compilation: Debug-Release"
-	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		-Wall -Wno-unused-function -Ofast \
-		-D_DEBUG -D_RELEASE -DUSING_LIBC -lc -g \
+	echo "Application Compilation: Debug-Release"
+	$CC ./libapp.c -shared -fPIC -nostdlib -fno-builtin \
+		-Wall -Wno-unused-function -Ofast -g \
+		-D_DEBUG -D_RELEASE \
 		-I "${INC}" \
-		-o "${OUT_DBR}/template"
+		-o "${OUT_DBR}/libapp.so"
 	if [[ ! ${?} == "0" ]]; then
 		exit ${?}
 	fi
