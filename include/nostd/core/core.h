@@ -6,6 +6,7 @@
 
 // Primitives & Standalonw Primitive Defines
 #include "platform.h"
+#include "float.h"
 
 // Core Memory Functions & Memory Function Pointers
 #include "memfn.h"
