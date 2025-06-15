@@ -54,11 +54,7 @@
 /////////////
 // Headers //
 /////////////
-#ifdef _WIN32
-	#include <emmintrin.h>
-#else
-	#include <x86intrin.h>
-#endif
+#include <emmintrin.h>
 
 ////////////////////////
 // Standalone Defines //

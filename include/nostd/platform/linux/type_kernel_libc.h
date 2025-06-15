@@ -2,7 +2,8 @@
 #define INCLUDE_PLATFORM_LINUX_TYPE_KERNEL_LIBC_H
 
 #ifdef USING_LIBC
-	#include <linux/time.h>
+	#include <bits/time.h>
+	#include <sys/time.h>
 	#include <linux/futex.h>
 	#include <linux/sched.h>
 	#include <sys/mman.h>
@@ -17,16 +18,9 @@
 typedef void (*__sighandler_t) (int);
 
 typedef int   pid_t;
-typedef pid_t uid_t;
-typedef usz   clock_t;
 typedef long long int greg_t;
 typedef greg_t gregset_t[23];
 typedef struct _libc_fpstate *fpregset_t;
-
-struct timeval {
-	time_t tv_sec;
-	time_t tv_usec;
-};
 
 struct timezone {
 	int tz_minuteswest;
@@ -39,11 +33,6 @@ union sigval
   void *sival_ptr;
 };
 typedef union sigval sigval_t;
-
-typedef struct
-{
-  unsigned long int __val[_SIGSET_NWORDS];
-} sigset_t;
 
 struct fpxreg
 {
