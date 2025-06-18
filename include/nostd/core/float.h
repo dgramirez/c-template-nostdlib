@@ -3,9 +3,12 @@
  * Author: Derrick G. Ramirez
 
  * Requirements:
- *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION
- *     - Use this define above all nostd standalone files.
+ *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION__
+ *     - Use this define above for all nostd standalone files.
  *
+ *     - #define  __GET_NOSTD_STANDALONE_IMPLEMENTATION_FLOATS__
+ *     - Use this define above for this file only.
+ * 
  * License:
  * This is free and unencumbered software released into the public domain.
  *
@@ -41,14 +44,9 @@
 		 - log, log2, log10
  */
 
-/////////////
-// Headers //
-/////////////
-#include <emmintrin.h>
-
-////////////////////////
-// Standalone Defines //
-////////////////////////
+ ////////////////////////
+ // Standalone Defines //
+ ////////////////////////
 #ifndef __STANDALONE_FLOAT_FUNCTIONS_H
 #define __STANDALONE_FLOAT_FUNCTIONS_H
 
@@ -59,10 +57,23 @@
 #ifndef __nostd_f32iunion
 typedef union {
 	float        f;
-	unsigned int i;
+	unsigned int u;
+	int          i;
 } F32i;
-
 #define __nostd_f32iunion
+#endif
+
+#ifndef __nostd_f64iunion
+typedef union {
+	double d;
+	struct { unsigned int ulow, uhigh; };
+	struct {          int ilow, ihigh; };
+	#if defined(__x86_64__) || defined(_M_X64)
+		unsigned long long ull;
+		long long           ll;
+	#endif
+} F64i;
+#define __nostd_f64iunion
 #endif
 
 #ifndef __nostd_imin
@@ -293,10 +304,340 @@ f32_sqrt(float x);
 __nostd_api float
 f32_isqrt(float x);
 
+// Trig Functions (F64, F32)
+__nostd_api double
+f64_sin_mm2(double x);
+__nostd_api double
+f64_sin_mm3(double x);
+__nostd_api double
+f64_sin_mm4(double x);
+__nostd_api double
+f64_sin_mm5(double x);
+__nostd_api double
+f64_sin_mm6(double x);
+__nostd_api double
+f64_sin_mm7(double x);
+
+__nostd_api float
+f32_sin_mm2(float x);
+__nostd_api float
+f32_sin_mm3(float x);
+__nostd_api float
+f32_sin_mm4(float x);
+__nostd_api float
+f32_sin_mm5(float x);
+__nostd_api float
+f32_sin_mm6(float x);
+__nostd_api float
+f32_sin_mm7(float x);
+
+__nostd_api double
+f64_cos_mm2(double x);
+__nostd_api double
+f64_cos_mm3(double x);
+__nostd_api double
+f64_cos_mm4(double x);
+__nostd_api double
+f64_cos_mm5(double x);
+__nostd_api double
+f64_cos_mm6(double x);
+__nostd_api double
+f64_cos_mm7(double x);
+
+__nostd_api float
+f32_cos_mm2(float x);
+__nostd_api float
+f32_cos_mm3(float x);
+__nostd_api float
+f32_cos_mm4(float x);
+__nostd_api float
+f32_cos_mm5(float x);
+__nostd_api float
+f32_cos_mm6(float x);
+__nostd_api float
+f32_cos_mm7(float x);
+
+__nostd_api double
+f64_tan_mm2(double x);
+__nostd_api double
+f64_tan_mm3(double x);
+__nostd_api double
+f64_tan_mm4(double x);
+__nostd_api double
+f64_tan_mm5(double x);
+__nostd_api double
+f64_tan_mm6(double x);
+__nostd_api double
+f64_tan_mm7(double x);
+
+__nostd_api float
+f32_tan_mm2(float x);
+__nostd_api float
+f32_tan_mm3(float x);
+__nostd_api float
+f32_tan_mm4(float x);
+__nostd_api float
+f32_tan_mm5(float x);
+__nostd_api float
+f32_tan_mm6(float x);
+__nostd_api float
+f32_tan_mm7(float x);
+
+__nostd_api double
+f64_csc_mm2(double x);
+__nostd_api double
+f64_csc_mm3(double x);
+__nostd_api double
+f64_csc_mm4(double x);
+__nostd_api double
+f64_csc_mm5(double x);
+__nostd_api double
+f64_csc_mm6(double x);
+__nostd_api double
+f64_csc_mm7(double x);
+
+__nostd_api float
+f32_csc_mm2(float x);
+__nostd_api float
+f32_csc_mm3(float x);
+__nostd_api float
+f32_csc_mm4(float x);
+__nostd_api float
+f32_csc_mm5(float x);
+__nostd_api float
+f32_csc_mm6(float x);
+__nostd_api float
+f32_csc_mm7(float x);
+
+__nostd_api double
+f64_sec_mm2(double x);
+__nostd_api double
+f64_sec_mm3(double x);
+__nostd_api double
+f64_sec_mm4(double x);
+__nostd_api double
+f64_sec_mm5(double x);
+__nostd_api double
+f64_sec_mm6(double x);
+__nostd_api double
+f64_sec_mm7(double x);
+
+__nostd_api float
+f32_sec_mm2(float x);
+__nostd_api float
+f32_sec_mm3(float x);
+__nostd_api float
+f32_sec_mm4(float x);
+__nostd_api float
+f32_sec_mm5(float x);
+__nostd_api float
+f32_sec_mm6(float x);
+__nostd_api float
+f32_sec_mm7(float x);
+
+__nostd_api double
+f64_cot_mm2(double x);
+__nostd_api double
+f64_cot_mm3(double x);
+__nostd_api double
+f64_cot_mm4(double x);
+__nostd_api double
+f64_cot_mm5(double x);
+__nostd_api double
+f64_cot_mm6(double x);
+__nostd_api double
+f64_cot_mm7(double x);
+
+__nostd_api float
+f32_cot_mm2(float x);
+__nostd_api float
+f32_cot_mm3(float x);
+__nostd_api float
+f32_cot_mm4(float x);
+__nostd_api float
+f32_cot_mm5(float x);
+__nostd_api float
+f32_cot_mm6(float x);
+__nostd_api float
+f32_cot_mm7(float x);
+
+__nostd_api double
+f64_asin_mm2(double x);
+__nostd_api double
+f64_asin_mm3(double x);
+__nostd_api double
+f64_asin_mm4(double x);
+__nostd_api double
+f64_asin_mm5(double x);
+__nostd_api double
+f64_asin_mm6(double x);
+__nostd_api double
+f64_asin_mm7(double x);
+__nostd_api double
+f64_asin_mm8(double x);
+__nostd_api double
+f64_asin_mm9(double x);
+__nostd_api double
+f64_asin_mm10(double x);
+__nostd_api double
+f64_asin_mm11(double x);
+__nostd_api double
+f64_asin_mm12(double x);
+__nostd_api double
+f64_asin_mm13(double x);
+__nostd_api double
+f64_asin_mm14(double x);
+__nostd_api double
+f64_asin_mm15(double x);
+
+__nostd_api float
+f32_asin_mm2(float x);
+__nostd_api float
+f32_asin_mm3(float x);
+__nostd_api float
+f32_asin_mm4(float x);
+__nostd_api float
+f32_asin_mm5(float x);
+__nostd_api float
+f32_asin_mm6(float x);
+__nostd_api float
+f32_asin_mm7(float x);
+__nostd_api float
+f32_asin_mm8(float x);
+__nostd_api float
+f32_asin_mm9(float x);
+__nostd_api float
+f32_asin_mm10(float x);
+__nostd_api float
+f32_asin_mm11(float x);
+__nostd_api float
+f32_asin_mm12(float x);
+__nostd_api float
+f32_asin_mm13(float x);
+__nostd_api float
+f32_asin_mm14(float x);
+__nostd_api float
+f32_asin_mm15(float x);
+
+__nostd_api double
+f64_acos_mm2(double x);
+__nostd_api double
+f64_acos_mm3(double x);
+__nostd_api double
+f64_acos_mm4(double x);
+__nostd_api double
+f64_acos_mm5(double x);
+__nostd_api double
+f64_acos_mm6(double x);
+__nostd_api double
+f64_acos_mm7(double x);
+__nostd_api double
+f64_acos_mm8(double x);
+__nostd_api double
+f64_acos_mm9(double x);
+__nostd_api double
+f64_acos_mm10(double x);
+__nostd_api double
+f64_acos_mm11(double x);
+__nostd_api double
+f64_acos_mm12(double x);
+__nostd_api double
+f64_acos_mm13(double x);
+__nostd_api double
+f64_acos_mm14(double x);
+__nostd_api double
+f64_acos_mm15(double x);
+
+__nostd_api float
+f32_acos_mm2(float x);
+__nostd_api float
+f32_acos_mm3(float x);
+__nostd_api float
+f32_acos_mm4(float x);
+__nostd_api float
+f32_acos_mm5(float x);
+__nostd_api float
+f32_acos_mm6(float x);
+__nostd_api float
+f32_acos_mm7(float x);
+__nostd_api float
+f32_acos_mm8(float x);
+__nostd_api float
+f32_acos_mm9(float x);
+__nostd_api float
+f32_acos_mm10(float x);
+__nostd_api float
+f32_acos_mm11(float x);
+__nostd_api float
+f32_acos_mm12(float x);
+__nostd_api float
+f32_acos_mm13(float x);
+__nostd_api float
+f32_acos_mm14(float x);
+__nostd_api float
+f32_acos_mm15(float x);
+
+__nostd_api double
+f64_atan_mm2(double x);
+__nostd_api double
+f64_atan_mm3(double x);
+__nostd_api double
+f64_atan_mm4(double x);
+__nostd_api double
+f64_atan_mm5(double x);
+__nostd_api double
+f64_atan_mm6(double x);
+__nostd_api double
+f64_atan_mm7(double x);
+__nostd_api double
+f64_atan_mm8(double x);
+__nostd_api double
+f64_atan_mm9(double x);
+__nostd_api double
+f64_atan_mm10(double x);
+__nostd_api double
+f64_atan_mm11(double x);
+__nostd_api double
+f64_atan_mm12(double x);
+__nostd_api double
+f64_atan_mm13(double x);
+__nostd_api double
+f64_atan_mm14(double x);
+__nostd_api double
+f64_atan_mm15(double x);
+
+__nostd_api float
+f32_atan_mm2(float x);
+__nostd_api float
+f32_atan_mm3(float x);
+__nostd_api float
+f32_atan_mm4(float x);
+__nostd_api float
+f32_atan_mm5(float x);
+__nostd_api float
+f32_atan_mm6(float x);
+__nostd_api float
+f32_atan_mm7(float x);
+__nostd_api float
+f32_atan_mm8(float x);
+__nostd_api float
+f32_atan_mm9(float x);
+__nostd_api float
+f32_atan_mm10(float x);
+__nostd_api float
+f32_atan_mm11(float x);
+__nostd_api float
+f32_atan_mm12(float x);
+__nostd_api float
+f32_atan_mm13(float x);
+__nostd_api float
+f32_atan_mm14(float x);
+__nostd_api float
+f32_atan_mm15(float x);
+
 //////////////////////////
 // Function Definitions //
 //////////////////////////
-
 #if defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION__) || defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION_FLOATS__)
 
 // F64
@@ -354,7 +695,9 @@ f64_floor(double x)
 __nostd_api double
 f64_abs(double x)
 {
-	return x < 0 ? -x : x;
+	F64i val = { .d = x };
+	val.uhigh &= 0x7FFFFFFF;
+	return val.d;
 }
 
 __nostd_api double
@@ -379,8 +722,27 @@ f64_mod(double x, double mod)
 __nostd_api double
 f64_sqrt(double x)
 {
-	__m128d mx = _mm_load_sd(&x);
-	return _mm_cvtsd_f64(_mm_sqrt_sd(mx, mx));
+	return 1.0 / f64_isqrt(x);
+}
+
+__nostd_api double
+f64_isqrt(double x)
+{
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	return (double)f32_isqrt((float)x);
+#else
+	double xhalf;
+	F64i  val;
+
+	val.d = x;
+	val.ll = 0x5FE6EB50C7B537A9 - (val.ll >> 1);
+
+	xhalf = x * 0.5;
+	val.d *= 1.5f - xhalf * val.d * val.d;
+	val.d *= 1.5f - xhalf * val.d * val.d;
+
+	return val.d;
+#endif
 }
 
 // F32
@@ -412,7 +774,7 @@ f32_iseq(float x,
 
 	// Relative Equality
 	rdiv.f = f1 + f2;
-	rdiv.i = __nostd_imin(rdiv.i, F32_MAX_BITS);
+	rdiv.i = __nostd_imin(rdiv.u, F32_MAX_BITS);
 	if ((fdiff / rdiv.f) < F32_EPSILON)
 		return 1;
 
@@ -422,15 +784,21 @@ f32_iseq(float x,
 __nostd_api float
 f32_ceil(float x)
 {
-	int val = (int)x;
-	return (float)(val + 1 - ((val & 0x80000000) >> 31));
+	int val;
+	
+	val = (int)x;
+	val = val + 1 - (((unsigned int)val & 0x80000000) >> 31);
+	return (float)(val);
 }
 
 __nostd_api float
 f32_floor(float x)
 {
-	int val = (int)x;
-	return (float)(val - ((val & 0x80000000) >> 31));
+	int val;
+
+	val = (int)x;
+	val = val - (((unsigned int)val & 0x80000000) >> 31);
+	return (float)(val);
 }
 
 __nostd_api float
@@ -450,13 +818,23 @@ f32_mod(float x, float mod)
 __nostd_api float
 f32_sqrt(float x)
 {
-	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_load_ss(&x)));
+	return 1.0f / f32_isqrt(x);
 }
 
 __nostd_api float
 f32_isqrt(float x)
 {
-	return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_load_ss(&x)));
+	float xhalf;
+	F32i  val;
+
+	val.f = x;
+	val.i = 0x5F375A86 - (val.i >> 1);
+
+	xhalf = x * 0.5f;
+	val.f *= 1.5f - xhalf * val.f * val.f;
+	val.f *= 1.5f - xhalf * val.f * val.f;
+
+	return val.f;
 }
 
 ////////////////////////
@@ -2498,27 +2876,26 @@ __nostd_api f32_trigfn f32_atan_minimax[] = {
 	f32_atan_mm14, // Max Err: <= 0.000000119 [Machine Epsilon]
 };
 
-__nostd_api f64_trigfn f64_sin  = f64_sin_mm4;
-__nostd_api f64_trigfn f64_cos  = f64_cos_mm4;
-__nostd_api f64_trigfn f64_tan  = f64_tan_mm6;
-__nostd_api f64_trigfn f64_csc  = f64_csc_mm4;
-__nostd_api f64_trigfn f64_sec  = f64_csc_mm4;
-__nostd_api f64_trigfn f64_cot  = f64_tan_mm6;
+__nostd_api f64_trigfn f64_sin = f64_sin_mm4;
+__nostd_api f64_trigfn f64_cos = f64_cos_mm4;
+__nostd_api f64_trigfn f64_tan = f64_tan_mm6;
+__nostd_api f64_trigfn f64_csc = f64_csc_mm4;
+__nostd_api f64_trigfn f64_sec = f64_csc_mm4;
+__nostd_api f64_trigfn f64_cot = f64_tan_mm6;
 __nostd_api f64_trigfn f64_asin = f64_asin_mm11;
 __nostd_api f64_trigfn f64_acos = f64_acos_mm11;
 __nostd_api f64_trigfn f64_atan = f64_atan_mm11;
 
-__nostd_api f32_trigfn f32_sin  = f32_sin_mm4;
-__nostd_api f32_trigfn f32_cos  = f32_cos_mm4;
-__nostd_api f32_trigfn f32_tan  = f32_tan_mm6;
-__nostd_api f32_trigfn f32_csc  = f32_csc_mm4;
-__nostd_api f32_trigfn f32_sec  = f32_sec_mm4;
-__nostd_api f32_trigfn f32_cot  = f32_cot_mm6;
+__nostd_api f32_trigfn f32_sin = f32_sin_mm4;
+__nostd_api f32_trigfn f32_cos = f32_cos_mm4;
+__nostd_api f32_trigfn f32_tan = f32_tan_mm6;
+__nostd_api f32_trigfn f32_csc = f32_csc_mm4;
+__nostd_api f32_trigfn f32_sec = f32_sec_mm4;
+__nostd_api f32_trigfn f32_cot = f32_cot_mm6;
 __nostd_api f32_trigfn f32_asin = f32_asin_mm11;
 __nostd_api f32_trigfn f32_acos = f32_acos_mm11;
 __nostd_api f32_trigfn f32_atan = f32_atan_mm11;
 
 #endif // (__GET_NOSTD_STANDALONE_IMPLEMENTATION__) || defined(__GET_NOSTD_STANDALONE_IMPLEMENTATION_FLOATS__)
 #endif // __STANDALONE_FLOAT_FUNCTIONS_H
-
 
