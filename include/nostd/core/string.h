@@ -3,8 +3,11 @@
  * Author: Derrick G. Ramirez
  *
  * Requirements:
- *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION
- *     - Use this define above all nostd standalone files.
+ *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION__
+ *     - Use this define above for all nostd standalone files.
+ *
+ *     - #define __GET_NOSTD_STANDALONE_IMPLEMENTATION_STRING__
+ *     - Use this define above for this file only.
  *
  * License:
  * This is free and unencumbered software released into the public domain.
