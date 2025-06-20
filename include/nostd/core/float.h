@@ -54,38 +54,41 @@
 #define __nostd_api
 #endif
 
-#ifndef __nostd_f32iunion
-typedef union {
-	float        f;
-	unsigned int u;
-	int          i;
-} F32i;
-#define __nostd_f32iunion
-#endif
-
-#ifndef __nostd_f64iunion
-typedef union {
-	double d;
-	struct { unsigned int ulow, uhigh; };
-	struct {          int ilow, ihigh; };
-	#if defined(__x86_64__) || defined(_M_X64)
-		unsigned long long ull;
-		long long           ll;
+#ifndef __nostd_iminf
+	#ifndef __nostd_minmax_bits
+		#define __nostd_minmaxf_bits(ix, iy, fx, fy) \
+			(((ix) ^ (iy)) & -((fx) < (fy)))
 	#endif
-} F64i;
-#define __nostd_f64iunion
-#endif
-
-#ifndef __nostd_imin
-#ifndef __nostd_minmax_bits
-#define __nostd_minmax_bits(x, y) (((x) ^ (y)) & -((x) < (y)))
-#endif
-#define __nostd_imin(x, y) ((y) ^ __nostd_minmax_bits((x), (y)))
+	#define __nostd_iminf(ix, iy, fx, fy) \
+		((iy) ^ __nostd_minmaxf_bits((ix), (iy), (fx), (fy)))
 #endif
 
 #ifndef __nostd_extern 
-#define __nostd_extern extern
+	#define __nostd_extern extern
 #endif
+
+#ifndef __nostd_f32iunion
+	typedef union {
+		float        f;
+		unsigned int u;
+		int          i;
+	} F32i;
+	#define __nostd_f32iunion
+#endif
+
+#ifndef __nostd_f64iunion
+	typedef union {
+		double d;
+		struct { unsigned int ulow, uhigh; };
+		struct {          int ilow, ihigh; };
+		#if defined(__x86_64__) || defined(_M_X64)
+			unsigned long long ull;
+			long long           ll;
+		#endif
+	} F64i;
+	#define __nostd_f64iunion
+#endif
+
 
 // F32 Defines
 #ifndef F32_DIGITS
@@ -654,7 +657,6 @@ f64_iseq(double x,
 	double f1;
 	double f2;
 	double fdiff;
-	double rdiv;
 
 	// Exact Equality
 	if (x == y)
@@ -668,10 +670,17 @@ f64_iseq(double x,
 		return 1;
 
 	// Relative Equality
-	rdiv = f1 + f2;
-	rdiv = rdiv < F64_MAX ? rdiv : F64_MAX;
-	if ((fdiff / rdiv) < F64_EPSILON)
-		return 1;
+	#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+		double rdiv = f1 + f2;
+		rdiv = rdiv < F64_MAX ? rdiv : F64_MAX;
+		if ((fdiff / rdiv) < F64_EPSILON)
+			return 1;
+	#else
+		F64i rdiv = { .d = f1+f2 };
+		rdiv.ull = __nostd_iminf(rdiv.ull, F64_MAX_BITS, rdiv.d, F64_MAX);
+		if ((fdiff / rdiv.d) < F64_EPSILON)
+			return 1;
+	#endif
 
 	return 0;
 }
@@ -774,7 +783,7 @@ f32_iseq(float x,
 
 	// Relative Equality
 	rdiv.f = f1 + f2;
-	rdiv.i = __nostd_imin(rdiv.u, F32_MAX_BITS);
+	rdiv.i = __nostd_iminf(rdiv.u, F32_MAX_BITS, rdiv.f, F32_MAX);
 	if ((fdiff / rdiv.f) < F32_EPSILON)
 		return 1;
 
