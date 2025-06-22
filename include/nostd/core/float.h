@@ -51,7 +51,7 @@
 #define __STANDALONE_FLOAT_FUNCTIONS_H
 
 #ifndef __nostd_api
-#define __nostd_api
+	#define __nostd_api
 #endif
 
 #ifndef __nostd_iminf
@@ -749,6 +749,7 @@ f64_isqrt(double x)
 	xhalf = x * 0.5;
 	val.d *= 1.5f - xhalf * val.d * val.d;
 	val.d *= 1.5f - xhalf * val.d * val.d;
+	val.d *= 1.5f - xhalf * val.d * val.d;
 
 	return val.d;
 #endif
@@ -840,6 +841,7 @@ f32_isqrt(float x)
 	val.i = 0x5F375A86 - (val.i >> 1);
 
 	xhalf = x * 0.5f;
+	val.f *= 1.5f - xhalf * val.f * val.f;
 	val.f *= 1.5f - xhalf * val.f * val.f;
 	val.f *= 1.5f - xhalf * val.f * val.f;
 

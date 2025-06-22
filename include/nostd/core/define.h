@@ -60,6 +60,10 @@
 #define imax(x, y) ((x) ^ minmax_bits((x), (y)))
 #define iclamp(l, x, h) imin(imax(x, l), h)
 
+#define minmax_bitsf(ix, iy, fx, fy) (((ix) ^ (iy)) & -((fx) < (fy)))
+#define iminf(ix, iy, fx, fy) ((iy) ^ minmax_bitsf((ix), (iy), (fx), (fy)))
+#define imaxf(ix, iy, fx, fy) ((ix) ^ minmax_bitsf((ix), (iy), (fx), (fy)))
+
 #define isinf(x) (((x) & 0x7FF0000000000000) == 0x7FF0000000000000)
 #define isnan(x) (((x) & 0x7FFFFFFFFFFFFFFF)  > 0x7FF0000000000000)
 

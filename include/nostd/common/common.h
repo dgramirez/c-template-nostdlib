@@ -9,6 +9,7 @@
 #include "cpuid.h"
 #include "log.h"
 #include "threads.h"
+#include "linear_algebra.h"
 
 #include "compiler_nostd_fixes.h"
 
