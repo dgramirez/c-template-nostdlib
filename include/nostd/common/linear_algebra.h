@@ -256,21 +256,48 @@ local PFN_Mat4Perspective  m4f_init_perspective;
 //////////////////////////////////////
 // Implementation: Vector 4 (vec4f) //
 //////////////////////////////////////
-#define v4f_zero() (vec4f){ 0.0f, 0.0f, 0.0f, 0.0f }
-#define v4f_set_pv4f(v) \
-(vec4f){  \
-	v->y, \
-	v->x, \
-	v->z, \
-	v->w  \
-}
-#define v4f_set_v4f(v) \
-(vec4f){                    \
-	v.x,                    \
-	v.y,                    \
-	v.z,                    \
-	v.w                     \
-}
+#define v4f_set_comp(out, xval, yval, zval, wval) \
+	(out).x = (xval); \
+	(out).y = (yval); \
+	(out).z = (zval); \
+	(out).w = (wval)
+
+#define v4f_set_v4f(out, v) \
+	(out).x = (v).x; \
+	(out).y = (v).y; \
+	(out).z = (v).z; \
+	(out).w = (v).w
+
+#define v4f_set_pv4f(out, v) \
+	(out).x = (v)->x; \
+	(out).y = (v)->y; \
+	(out).z = (v)->z; \
+	(out).w = (v)->w
+
+#define pv4f_set_comp(out, xval, yval, zval, wval) \
+	(out)->x = (xval); \
+	(out)->y = (yval); \
+	(out)->z = (zval); \
+	(out)->w = (wval)
+
+#define pv4f_set_v4f(out, v) \
+	(out)->x = (v).x; \
+	(out)->y = (v).y; \
+	(out)->z = (v).z; \
+	(out)->w = (v).w
+
+#define pv4f_set_pv4f(out, v) \
+	(out)->x = (v)->x; \
+	(out)->y = (v)->y; \
+	(out)->z = (v)->z; \
+	(out)->w = (v)->w
+
+#define v4f_set_zero(out) v4f_set_comp(out, 0.0f, 0.0f, 0.0f, 0.0f)
+#define v4f_set_one(out)  v4f_set_comp(out, 1.0f, 1.0f, 1.0f, 1.0f)
+#define v4f_set_min(out) \
+	v4f_set_comp(out, F32_MIN, F32_MIN, F32_MIN, F32_MIN)
+#define v4f_set_max(out) \
+	v4f_set_comp(out, F32_MAX, F32_MAX, F32_MAX, F32_MAX)
 
 local int
 v4fb_iszero(vec4f *v)
@@ -287,7 +314,9 @@ v4fb_iseq(vec4f *v1,
 	vec4f av2;
 	vec4f vdiff;
 	vec4f rdiv;
-	vec4f vmax = (vec4f){ F32_MAX, F32_MAX, F32_MAX, F32_MAX };
+	vec4f vmax;
+
+	v4f_set_max(vmax);
 
 	// Exact Equality
 	if ((v1->x == v2->x && v1->y == v2->y) &&
@@ -476,7 +505,7 @@ v4fb_normalize(vec4f *out,
 
 	lensq = v4f_lengthsq(v);
 	if (lensq == 0) {
-		*out = v4f_set_pv4f(v);
+		pv4f_set_pv4f(out, v);
 		return;
 	}
 
@@ -492,7 +521,7 @@ v4fb_homogenize(vec4f *out,
                 vec4f *v)
 {
 	if (f32_iszero(v->w)) {
-		*out = v4f_set_pv4f(v);
+		pv4f_set_pv4f(out, v);
 		return;
 	}
 
@@ -540,7 +569,7 @@ v4fb_reflect(vec4f *out,
              vec4f *v2)
 {
 	if (v4f_iszero(v2)) {
-		*out = v4f_set_pv4f(v1);
+		pv4f_set_pv4f(out, v1);
 		v4f_negate(out, out);
 		return;
 	}
@@ -554,64 +583,106 @@ v4fb_reflect(vec4f *out,
 ////////////////////////////////////////
 // Implementation: Matrix 4x4 (mat4f) //
 ////////////////////////////////////////
-#define m4f_init_diag(s, g)  \
-(mat4f){                     \
-	 (s), 0.0f, 0.0f, 0.0f,  \
-	0.0f,  (s), 0.0f, 0.0f,  \
-	0.0f, 0.0f,  (s), 0.0f,  \
-	0.0f, 0.0f, 0.0f,  (g),  \
-}
-#define m4f_init_zero()      m4f_init_diag(0.0f, 0.0f)
-#define m4f_init_identity()  m4f_init_diag(1.0f, 1.0f)
-#define m4f_init_scale(s)    m4f_init_diag(   s, 1.0f)
+#define m4f_set_comp(out, v00, v01, v02, v03, v10, v11, v12, v13, v20, v21, v22, v23, v30, v31, v32, v33) \
+	(out).m00 = (v00); (out).m01 = (v01); (out).m02 = (v02); (out).m03 = (v03); \
+	(out).m10 = (v10); (out).m11 = (v11); (out).m12 = (v12); (out).m13 = (v13); \
+	(out).m20 = (v20); (out).m21 = (v21); (out).m22 = (v22); (out).m23 = (v23); \
+	(out).m30 = (v30); (out).m31 = (v31); (out).m32 = (v32); (out).m33 = (v33)
 
-#define m4f_init_translate(x, y, z) \
-(mat4f){                            \
-	1.0f, 0.0f, 0.0f, 0.0f,         \
-	0.0f, 1.0f, 0.0f, 0.0f,         \
-	0.0f, 0.0f, 1.0f, 0.0f,         \
-	 (x),  (y),  (z), 1.0f,         \
-}
+#define m4f_set_m4f(out, m) \
+	(out).m00 = (m).m00; (out).m01 = (m).m01; (out).m02 = (m).m02; (out).m03 = (m).m03; \
+	(out).m10 = (m).m10; (out).m11 = (m).m11; (out).m12 = (m).m12; (out).m13 = (m).m13; \
+	(out).m20 = (m).m20; (out).m21 = (m).m21; (out).m22 = (m).m22; (out).m23 = (m).m23; \
+	(out).m30 = (m).m30; (out).m31 = (m).m31; (out).m32 = (m).m32; (out).m33 = (m).m33
 
-#define m4f_init_shear(xy, xz, yx, yz, zx, zy) \
-(mat4f){                                       \
-	1.0f,   xy,   xz, 0.0f,                    \
-	  yx, 1.0f,   yz, 0.0f,                    \
-	  zx,   zy, 1.0f, 0.0f,                    \
-	0.0f, 0.0f, 0.0f, 1.0f,                    \
-}
+#define m4f_set_pm4f(out, m) \
+	(out).m00 = (m)->m00; (out).m01 = (m)->m01; (out).m02 = (m)->m02; (out).m03 = (m)->m03; \
+	(out).m10 = (m)->m10; (out).m11 = (m)->m11; (out).m12 = (m)->m12; (out).m13 = (m)->m13; \
+	(out).m20 = (m)->m20; (out).m21 = (m)->m21; (out).m22 = (m)->m22; (out).m23 = (m)->m23; \
+	(out).m30 = (m)->m30; (out).m31 = (m)->m31; (out).m32 = (m)->m32; (out).m33 = (m)->m33
 
-#define m4f_set_pm4f(m)                     \
-(mat4f){                                    \
-	(m)->m00, (m)->m01, (m)->m02, (m)->m03, \
-	(m)->m10, (m)->m11, (m)->m12, (m)->m13, \
-	(m)->m20, (m)->m21, (m)->m22, (m)->m23, \
-	(m)->m30, (m)->m31, (m)->m32, (m)->m33, \
-}
+#define pm4f_set_comp(out, v00, v01, v02, v03, v10, v11, v12, v13, v20, v21, v22, v23, v30, v31, v32, v33) \
+	(out)->m00 = (v00); (out)->m01 = (v01); (out)->m02 = (v02); (out)->m03 = (v03); \
+	(out)->m10 = (v10); (out)->m11 = (v11); (out)->m12 = (v12); (out)->m13 = (v13); \
+	(out)->m20 = (v20); (out)->m21 = (v21); (out)->m22 = (v22); (out)->m23 = (v23); \
+	(out)->m30 = (v30); (out)->m31 = (v31); (out)->m32 = (v32); (out)->m33 = (v33)
 
-#define m4f_set_m4f(m)                  \
-(mat4f){                                \
-	(m).m00, (m).m01, (m).m02, (m).m03, \
-	(m).m10, (m).m11, (m).m12, (m).m13, \
-	(m).m20, (m).m21, (m).m22, (m).m23, \
-	(m).m30, (m).m31, (m).m32, (m).m33, \
-}
+#define pm4f_set_m4f(out, m) \
+	(out)->m00 = (m).m00; (out)->m01 = (m).m01; (out)->m02 = (m).m02; (out)->m03 = (m).m03; \
+	(out)->m10 = (m).m10; (out)->m11 = (m).m11; (out)->m12 = (m).m12; (out)->m13 = (m).m13; \
+	(out)->m20 = (m).m20; (out)->m21 = (m).m21; (out)->m22 = (m).m22; (out)->m23 = (m).m23; \
+	(out)->m30 = (m).m30; (out)->m31 = (m).m31; (out)->m32 = (m).m32; (out)->m33 = (m).m33
 
-#define m4f_transpose_pm4f(m)               \
-(mat4f){                                    \
-	(m)->m00, (m)->m10, (m)->m20, (m)->m30, \
-	(m)->m01, (m)->m11, (m)->m21, (m)->m31, \
-	(m)->m02, (m)->m12, (m)->m22, (m)->m32, \
-	(m)->m03, (m)->m13, (m)->m23, (m)->m33, \
-}
+#define pm4f_set_pm4f(out, m) \
+	(out)->m00 = (m)->m00; (out)->m01 = (m)->m01; (out)->m02 = (m)->m02; (out)->m03 = (m)->m03; \
+	(out)->m10 = (m)->m10; (out)->m11 = (m)->m11; (out)->m12 = (m)->m12; (out)->m13 = (m)->m13; \
+	(out)->m20 = (m)->m20; (out)->m21 = (m)->m21; (out)->m22 = (m)->m22; (out)->m23 = (m)->m23; \
+	(out)->m30 = (m)->m30; (out)->m31 = (m)->m31; (out)->m32 = (m)->m32; (out)->m33 = (m)->m33
 
-#define m4f_transpose_m4f(m)            \
-(mat4f){                                \
-	(m).m00, (m).m10, (m).m20, (m).m30, \
-	(m).m01, (m).m11, (m).m21, (m).m31, \
-	(m).m02, (m).m12, (m).m22, (m).m32, \
-	(m).m03, (m).m13, (m).m23, (m).m33, \
-}
+#define m4f_transpose_comp(out, v00, v01, v02, v03, v10, v11, v12, v13, v20, v21, v22, v23, v30, v31, v32, v33) \
+	(out).m00 = (v00); (out).m01 = (v10); (out).m02 = (v20); (out).m03 = (v30); \
+	(out).m10 = (v01); (out).m11 = (v11); (out).m12 = (v21); (out).m13 = (v31); \
+	(out).m20 = (v02); (out).m21 = (v12); (out).m22 = (v22); (out).m23 = (v32); \
+	(out).m30 = (v03); (out).m31 = (v13); (out).m32 = (v23); (out).m33 = (v33)
+
+#define m4f_transpose_m4f(out, m) \
+	(out).m00 = (m).m00; (out).m01 = (m).m10; (out).m02 = (m).m20; (out).m03 = (m).m30; \
+	(out).m10 = (m).m01; (out).m11 = (m).m11; (out).m12 = (m).m21; (out).m13 = (m).m31; \
+	(out).m20 = (m).m02; (out).m21 = (m).m12; (out).m22 = (m).m22; (out).m23 = (m).m32; \
+	(out).m30 = (m).m03; (out).m31 = (m).m13; (out).m32 = (m).m23; (out).m33 = (m).m33
+
+#define pm4f_transpose_comp(out, v00, v01, v02, v03, v10, v11, v12, v13, v20, v21, v22, v23, v30, v31, v32, v33) \
+	(out)->m00 = (v00); (out)->m01 = (v10); (out)->m02 = (v20); (out)->m03 = (v30); \
+	(out)->m10 = (v01); (out)->m11 = (v11); (out)->m12 = (v21); (out)->m13 = (v31); \
+	(out)->m20 = (v02); (out)->m21 = (v12); (out)->m22 = (v22); (out)->m23 = (v32); \
+	(out)->m30 = (v03); (out)->m31 = (v13); (out)->m32 = (v23); (out)->m33 = (v33)
+
+#define pm4f_transpose_m4f(out, m) \
+	(out)->m00 = (m).m00; (out)->m01 = (m).m10; (out)->m02 = (m).m20; (out)->m03 = (m).m30; \
+	(out)->m10 = (m).m01; (out)->m11 = (m).m11; (out)->m12 = (m).m21; (out)->m13 = (m).m31; \
+	(out)->m20 = (m).m02; (out)->m21 = (m).m12; (out)->m22 = (m).m22; (out)->m23 = (m).m32; \
+	(out)->m30 = (m).m03; (out)->m31 = (m).m13; (out)->m32 = (m).m23; (out)->m33 = (m).m33
+
+#define pm4f_transpose_pm4f(out, m) \
+	(out)->m00 = (m)->m00; (out)->m01 = (m)->m10; (out)->m02 = (m)->m20; (out)->m03 = (m)->m30; \
+	(out)->m10 = (m)->m01; (out)->m11 = (m)->m11; (out)->m12 = (m)->m21; (out)->m13 = (m)->m31; \
+	(out)->m20 = (m)->m02; (out)->m21 = (m)->m12; (out)->m22 = (m)->m22; (out)->m23 = (m)->m32; \
+	(out)->m30 = (m)->m03; (out)->m31 = (m)->m13; (out)->m32 = (m)->m23; (out)->m33 = (m)->m33
+
+#define m4f_set_diag(out, s, g) \
+	(out).m00 =  (s); (out).m01 = 0.0f; (out).m02 = 0.0f; (out).m03 = 0.0f; \
+	(out).m10 = 0.0f; (out).m11 =  (s); (out).m12 = 0.0f; (out).m13 = 0.0f; \
+	(out).m20 = 0.0f; (out).m21 = 0.0f; (out).m22 =  (s); (out).m23 = 0.0f; \
+	(out).m30 = 0.0f; (out).m31 = 0.0f; (out).m32 = 0.0f; (out).m33 =  (g)
+#define m4f_set_zero(out)        m4f_set_diag(out, 0.0f, 0.0f)
+#define m4f_set_identity(out)    m4f_set_diag(out, 1.0f, 1.0f)
+#define m4f_set_scale(out, s)    m4f_set_diag(out,    s, 1.0f)
+
+#define pm4f_set_diag(out, s, g) \
+	(out)->m10 = 0.0f; (out)->m11 =  (s); (out)->m12 = 0.0f; (out)->m13 = 0.0f; \
+	(out)->m00 =  (s); (out)->m01 = 0.0f; (out)->m02 = 0.0f; (out)->m03 = 0.0f; \
+	(out)->m20 = 0.0f; (out)->m21 = 0.0f; (out)->m22 =  (s); (out)->m23 = 0.0f; \
+	(out)->m30 = 0.0f; (out)->m31 = 0.0f; (out)->m32 = 0.0f; (out)->m33 =  (g)
+#define pm4f_set_zero(out)        pm4f_set_diag(out, 0.0f, 0.0f)
+#define pm4f_set_identity(out)    pm4f_set_diag(out, 1.0f, 1.0f)
+#define pm4f_set_scale(out, s)    pm4f_set_diag(out,    s, 1.0f)
+
+#define m4f_set_min(out) \
+	m4f_set_comp(out, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN, F32_MIN)
+#define m4f_set_max(out) \
+	m4f_set_comp(out, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX, F32_MAX)
+
+#define m4f_set_translation(out, xval, yval, zval) \
+	(out).m00 =   1.0f; (out).m01 =   0.0f; (out).m02 =   0.0f; (out).m03 = 0.0f; \
+	(out).m10 =   0.0f; (out).m11 =   1.0f; (out).m12 =   0.0f; (out).m13 = 0.0f; \
+	(out).m20 =   0.0f; (out).m21 =   0.0f; (out).m22 =   1.0f; (out).m23 = 0.0f; \
+	(out).m30 = (xval); (out).m31 = (yval); (out).m32 = (zval); (out).m33 = 1.0f
+
+#define m4f_set_shear(xy, xz, yx, yz, zx, zy) \
+	(out).m00 = 1.0f; (out).m01 = (xy); (out).m02 = (xz); (out).m03 = 0.0f; \
+	(out).m10 = (yx); (out).m11 = 1.0f; (out).m12 = (yz); (out).m13 = 0.0f; \
+	(out).m20 = (zx); (out).m21 = (zy); (out).m22 = 1.0f; (out).m23 = 0.0f; \
+	(out).m30 = 0.0f; (out).m31 = 0.0f; (out).m32 = 0.0f; (out).m33 = 1.0f
 
 local void
 m4fb_init_orthographic(mat4f *out,
@@ -823,12 +894,9 @@ m4fb_iseq(mat4f *m1, mat4f *m2)
 	mat4f am2;
 	mat4f mdiff;
 	mat4f rdiv;
-	mat4f mmax = {
-		F32_MAX, F32_MAX, F32_MAX, F32_MAX,
-		F32_MAX, F32_MAX, F32_MAX, F32_MAX,
-		F32_MAX, F32_MAX, F32_MAX, F32_MAX,
-		F32_MAX, F32_MAX, F32_MAX, F32_MAX
-	};
+	mat4f mmax;
+
+	m4f_set_max(mmax);
 
 	// Exact Equality
 	if (((((m1->m00 == m2->m00) && (m1->m01 == m2->m01))   &&
@@ -1011,7 +1079,7 @@ m4fb_mul(mat4f *out,
 	tmp.m33 = ((m1->m30 * m2->m03) + (m1->m31 * m2->m13)) +
 	          ((m1->m32 * m2->m23) + (m1->m33 * m2->m33));
 
-	*out = m4f_set_m4f(tmp);
+	pm4f_set_m4f(out, tmp);
 }
 
 local void
@@ -1137,7 +1205,7 @@ m4fb_mulmv(vec4f *out,
 	tmp.w = ((m->m30 * v->x) + (m->m31 * v->y)) +
             ((m->m32 * v->z) + (m->m33 * v->w));
 
-	*out = v4f_set_v4f(tmp);
+	v4f_set_v4f(*out, tmp);
 }
 
 local void
@@ -1159,7 +1227,7 @@ m4fb_mulvm(vec4f *out,
 	tmp.w = ((m->m03 * v->x) + (m->m13 * v->y)) +
             ((m->m23 * v->z) + (m->m33 * v->w));
 
-	*out = v4f_set_v4f(tmp);
+	v4f_set_v4f(*out, tmp);
 }
 
 local void
@@ -1272,7 +1340,7 @@ m4fb_inverse(mat4f *out, mat4f *m)
 	if (f32_iszero(det)) {
 		if (out == m) return;
 
-		*out = m4f_set_pm4f(m);
+		pm4f_set_pm4f(out, m);
 		return;
 	}
 
