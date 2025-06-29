@@ -59,7 +59,7 @@ match =WIN32, PLATFORM {
 
 		ret
 
-	public has_cpuid as "_has_cpuid"
+	public has_cpuid as "@has_cpuid@0"
 }
 
 match =LINUX, PLATFORM {

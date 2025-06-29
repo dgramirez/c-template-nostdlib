@@ -48,8 +48,21 @@
 
 #if defined(_WIN32)
 	#define export __declspec(dllexport)
+
+	#ifndef _ZIG
+		#if EXE_ARCH == 32
+			#define __atomic_asm_prefix __fastcall
+		#else
+			#define __atomic_asm_prefix
+		#endif
+	#else
+		#define __atomic_asm_prefix
+	#endif
 #else
 	#define export
+
+	#define __atomic_asm_prefix
+	#define __stdcall
 #endif
 
 //////////////
@@ -141,25 +154,25 @@
 #define LOG_FORMAT_FILE_7Z 0x10000
 
 #define log(level, msg) logs8(level, msg, __FILE__, __LINE__, __func__)
-#define log_egg(msg)    log(LOG_LEVEL_GOOFY, msg)
-#define log_debug(msg)  log(LOG_LEVEL_DEBUG, msg)
-#define log_info(msg)   log(LOG_LEVEL_INFO, msg)
-#define log_pass(msg)   log(LOG_LEVEL_SUCCESS, msg)
-#define log_odd(msg)    log(LOG_LEVEL_ANOMALLY, msg)
-#define log_warn(msg)   log(LOG_LEVEL_WARNING, msg)
-#define log_error(msg)  log(LOG_LEVEL_ERROR, msg)
-#define log_fatal(msg)  log(LOG_LEVEL_FATAL, msg)
-#define log_assert(msg) log(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
+#define log_egg(msg)    if (logs8) log(LOG_LEVEL_GOOFY, msg)
+#define log_debug(msg)  if (logs8) log(LOG_LEVEL_DEBUG, msg)
+#define log_info(msg)   if (logs8) log(LOG_LEVEL_INFO, msg)
+#define log_pass(msg)   if (logs8) log(LOG_LEVEL_SUCCESS, msg)
+#define log_odd(msg)    if (logs8) log(LOG_LEVEL_ANOMALLY, msg)
+#define log_warn(msg)   if (logs8) log(LOG_LEVEL_WARNING, msg)
+#define log_error(msg)  if (logs8) log(LOG_LEVEL_ERROR, msg)
+#define log_fatal(msg)  if (logs8) log(LOG_LEVEL_FATAL, msg)
+#define log_assert(msg) if (logs8) log(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)
 
 #define logc(level, msg) logsz(level, msg, __FILE__, __LINE__, __func__)
-#define logc_egg(msg)    logc(LOG_LEVEL_GOOFY, msg)
-#define logc_debug(msg)  logc(LOG_LEVEL_DEBUG, msg)
-#define logc_info(msg)   logc(LOG_LEVEL_INFO, msg)
-#define logc_pass(msg)   logc(LOG_LEVEL_SUCCESS, msg)
-#define logc_odd(msg)    logc(LOG_LEVEL_ANOMALLY, msg)
-#define logc_warn(msg)   logc(LOG_LEVEL_WARNING, msg)
-#define logc_error(msg)  logc(LOG_LEVEL_ERROR, msg)
-#define logc_fatal(msg)  logc(LOG_LEVEL_FATAL, msg)
+#define logc_egg(msg)    if (logsz) logc(LOG_LEVEL_GOOFY, msg)
+#define logc_debug(msg)  if (logsz) logc(LOG_LEVEL_DEBUG, msg)
+#define logc_info(msg)   if (logsz) logc(LOG_LEVEL_INFO, msg)
+#define logc_pass(msg)   if (logsz) logc(LOG_LEVEL_SUCCESS, msg)
+#define logc_odd(msg)    if (logsz) logc(LOG_LEVEL_ANOMALLY, msg)
+#define logc_warn(msg)   if (logsz) logc(LOG_LEVEL_WARNING, msg)
+#define logc_error(msg)  if (logsz) logc(LOG_LEVEL_ERROR, msg)
+#define logc_fatal(msg)  if (logsz) logc(LOG_LEVEL_FATAL, msg)
 
 #if defined(_DEBUG)
 	#define logc_assert(msg) logc(LOG_LEVEL_FATAL | LOG_LEVEL_ASSERT, msg)

@@ -20,19 +20,25 @@ _start() {
 	os_write        = Win32WriteFile;
 	logsz           = win32_logc;
 	logs8           = win32_log;
-	thread_wait     = Win32AddressWait;
-	thread_wake_one = Win32WakeByAddressSingle;
-	thread_wake_all = Win32WakeByAddressAll;
-	thread_create   = Win32ThreadCreate;
-	mlock_init      = mlock_init_mcslock;
-	mlock_acquire   = mlock_acquire_mcslock;
-	mlock_release   = mlock_release_mcslock;
-	tp_post         = tp_post_generic;
-	tp_quit         = tp_quit_generic;
-	tp_wait         = tp_wait_generic;
 	get_cpu_freq    = tsc_get_cpu_freq;
 	get_os_freq     = Win32GetFreq;
 	get_os_counter  = Win32GetCounter;
+
+	// Needs to be stubbed for the time being...
+	// TODO: Do Platform-Specific Multi-Threading
+	//       - Windows XP Compatible [Event Objects?]
+	//       - Windows 8+ [SlimRW Compatible? or Linux-Like?]
+//	thread_wait     = Win32AddressWait;
+//	thread_wake_one = Win32WakeByAddressSingle;
+//	thread_wake_all = Win32WakeByAddressAll;
+//	thread_create   = Win32ThreadCreate;
+//	mlock_init      = mlock_init_mcslock;
+//	mlock_acquire   = mlock_acquire_mcslock;
+//	mlock_release   = mlock_release_mcslock;
+//	mlock_free      = mlock_free_mcslock;
+//	tp_post         = tp_post_generic;
+//	tp_quit         = tp_quit_generic;
+//	tp_wait         = tp_wait_generic;
 
 	rval = Win32Main(arg, mem);
 	ExitProcess(rval);

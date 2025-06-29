@@ -56,10 +56,12 @@ win32_log(u32 level,
 	SYSTEMTIME                 lt          = {0};
 	FILETIME                   ft          = {0};
 	ULONGLONG                  time_100ns;
-	MCSLock                    me;
+	MCSMutex                   mutex;
 	usz                        is_assert;
 
-	__mcs_lock(&_glock_terminal, &me);
+	mutex.lock = &_glock_terminal;
+	if (mlock_acquire)
+		mlock_acquire(&mutex);
 
 	if (_glog.fb_file.data || _glog.fb_file.cap < page_size) {
 		// TODO: Write to File
@@ -212,7 +214,8 @@ win32_log(u32 level,
 		fb8_flush(&_glog.fb_terminal);
 	}
 
-	__mcs_unlock(&_glock_terminal, &me);
+	if (mlock_release)
+		mlock_release(&mutex);
 }
 
 local void

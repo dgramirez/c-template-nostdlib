@@ -25,41 +25,75 @@ Win32WriteToConsole(void *b, usz len) {
 	return WriteFile(out, b, (DWORD)len, &written, 0);
 }
 
-local long
-Win32AddressWait(u32 *addr, u32 expected)
-{
-	u32 val;
-
-	val = expected;
-	while (val == expected) {
-		WaitOnAddress(addr, &val, sizeof(u32), INFINITE);
-		val = *addr;
+#if _WIN32_WINNT >= _WIN32_WINNT_WIN8
+	local long
+	Win32AddressWait(u32 *addr, u32 expected)
+	{
+		u32 val;
+	
+		val = expected;
+		while (val == expected) {
+			WaitOnAddress(addr, &val, sizeof(u32), INFINITE);
+			val = *addr;
+		}
+	
+		return 0;
+	}
+	
+	local long
+	Win32WakeByAddressSingle(u32 *addr) {
+		WakeByAddressSingle(addr);
+		return 0;
+	}
+	
+	local long
+	Win32WakeByAddressAll(u32 *addr) {
+		WakeByAddressAll(addr);
+		return 0;
+	}
+	
+	local void *
+	Win32ThreadCreate(void *addr,
+	                  void *args,
+	                  usz stack_size)
+	{
+		LPTHREAD_START_ROUTINE a = (LPTHREAD_START_ROUTINE)addr;
+		return CreateThread(0, stack_size, a, args, 0, 0);
+	}
+#else
+	// NOTE: Stubbed
+	local long
+	Win32AddressWait(u32 *addr, u32 expected)
+	{
+		unref(addr);
+		unref(expected);
+		return 0;
+	}
+	
+	local long
+	Win32WakeByAddressSingle(u32 *addr) {
+		unref(addr);
+		return 0;
+	}
+	
+	local long
+	Win32WakeByAddressAll(u32 *addr) {
+		unref(addr);
+		return 0;
+	}
+	
+	local void *
+	Win32ThreadCreate(void *addr,
+	                  void *args,
+	                  usz stack_size)
+	{
+		unref(addr);
+		unref(args);
+		unref(stack_size);
+		return 0;
 	}
 
-	return 0;
-}
-
-local long
-Win32WakeByAddressSingle(u32 *addr) {
-	WakeByAddressSingle(addr);
-	return 0;
-}
-
-local long
-Win32WakeByAddressAll(u32 *addr) {
-	WakeByAddressAll(addr);
-	return 0;
-}
-
-local void *
-Win32ThreadCreate(void *addr,
-                  void *args,
-                  usz stack_size)
-{
-	LPTHREAD_START_ROUTINE a = (LPTHREAD_START_ROUTINE)addr;
-	return CreateThread(0, stack_size, a, args, 0, 0);
-}
-
+#endif
 local usz
 Win32GetFreq(void)
 {

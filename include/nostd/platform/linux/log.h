@@ -53,11 +53,14 @@ linux_log(u32 level,
           usz linenum,
           const char *fnname)
 {
-	MCSLock me;
-	LogTime lt;
-	usz     is_assert;
+	MCSMutex mutex;
+	LogTime  lt;
+	usz      is_assert;
 
-	__mcs_lock(&_glock_terminal, &me);
+	// Required since I need to do a revamp of the multi-threading
+	mutex.lock = &_glock_terminal;
+	if (mlock_acquire)
+		mlock_acquire(&mutex);
 
 	if (_glog.fb_file.data || _glog.fb_file.cap < page_size) {
 		// TODO: Write to File
@@ -196,7 +199,9 @@ linux_log(u32 level,
 
 		fb8_flush(&_glog.fb_terminal);
 	}
-	__mcs_unlock(&_glock_terminal, &me);
+
+	if (mlock_release)
+		mlock_release(&mutex);
 }
 
 local void

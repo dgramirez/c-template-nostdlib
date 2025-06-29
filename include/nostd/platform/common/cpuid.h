@@ -13,16 +13,16 @@ cpuid_native(unsigned int *eax,
              unsigned int *ecx,
              unsigned int *edx);
 
-extern i32
+extern i32 __atomic_asm_prefix
 has_cpuid(void);
 
-extern u32
+extern u32 __atomic_asm_prefix
 rdtsc_intel(void);
 
-extern u32
+extern u32 __atomic_asm_prefix
 rdtsc_amd(void);
 
-extern u32
+extern u32 __atomic_asm_prefix
 rdtscp_any(void);
 
 local usz

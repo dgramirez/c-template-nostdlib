@@ -44,7 +44,7 @@ Win32Main(b8 args, b8 mem)
 	assert(app_update, "Unable to locate inside dll: app_update");
 	assert(app_close,  "Unable to locate inside dll: app_close");
 
-	tp_init_generic(&tpdata, 1, KB(16), KB(4), 0);
+//	tp_init_generic(&tpdata, 1, KB(16), KB(4), 0);
 	win32_setup_platform_data(&pdata, &mbuddy);
 	pdata.tp_data = &tpdata;
 
@@ -57,7 +57,6 @@ Win32Main(b8 args, b8 mem)
 	tp_wait(&tpdata, 0);
 	tp_quit(&tpdata);
 
-	Sleep(3000);
 	unref(args);
 	return 0;
 }
@@ -75,13 +74,13 @@ win32_setup_platform_data(PlatformData *pdata,
 	pdata->os_write        = Win32WriteFile;
 	pdata->logsz           = logsz;
 	pdata->logs8           = logs8;
-	pdata->mlock_init      = mlock_init_mcslock;
-	pdata->mlock_acquire   = mlock_acquire_mcslock;
-	pdata->mlock_release   = mlock_release_mcslock;
-	pdata->mlock_free      = mlock_free_mcslock;
-	pdata->tp_post         = tp_post_generic;
-	pdata->tp_quit         = tp_quit_generic;
-	pdata->tp_wait         = tp_wait_generic;
+	pdata->mlock_init      = mlock_init;
+	pdata->mlock_acquire   = mlock_acquire;
+	pdata->mlock_release   = mlock_release;
+	pdata->mlock_free      = mlock_free;
+	pdata->tp_post         = tp_post;
+	pdata->tp_quit         = tp_quit;
+	pdata->tp_wait         = tp_wait;
 	cpuid_setup(&pdata->cpuid);
 
 	// Others

@@ -24,7 +24,7 @@ match =WIN64, PLATFORM {
 match =WIN32, PLATFORM {
 	public rdtsc_intel as '@rdtsc_intel@0'
 	public rdtsc_amd   as '@rdtsc_amd@0'
-	public rdtscp_any  as '@rdtsc_any@0'
+	public rdtscp_any  as '@rdtscp_any@0'
 }
 
 rdtsc_intel:

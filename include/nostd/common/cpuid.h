@@ -77,10 +77,9 @@ typedef enum {
 	CPU_TIMER_ELAPSED = 2
 } CPUID_CPUTimer;
 
-declfn(u32,
-       get_tsc,
-       return 0;,
-	   void);
+typedef u32 (__atomic_asm_prefix *PFN_get_tsc)(void);
+local u32 __atomic_asm_prefix get_tsc_stub(void) {return 0;}
+local PFN_get_tsc get_tsc = get_tsc_stub;
 
 declfn(usz,
        get_cpu_freq,

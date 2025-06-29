@@ -5,16 +5,8 @@
 ////////////////////////
 #ifdef _WIN32
 	typedef u32 thread_return;
-	#ifndef _ZIG
-		#define __atomic_asm_prefix __fastcall
-	#else
-		#define __atomic_asm_prefix
-	#endif
-
 #elif __linux__
 	typedef void thread_return;
-	#define __atomic_asm_prefix
-	#define __stdcall
 #endif
 
 /////////////
