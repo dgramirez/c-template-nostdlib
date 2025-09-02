@@ -49,37 +49,37 @@ setup_memory_profile(int profile) {
 	switch(profile) {
 		case ENTRY_MEMORY_PROFILE_DETECT: {
 			ret.len  = MB(64);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		case ENTRY_MEMORY_PROFILE_MINIMUM: {
 			ret.len  = MB(64);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		case ENTRY_MEMORY_PROFILE_LOW: {
 			ret.len  = MB(256);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		case ENTRY_MEMORY_PROFILE_MEDIUM: {
 			ret.len  = GB(1);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		case ENTRY_MEMORY_PROFILE_HIGH: {
 			ret.len  = GB(4);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		case ENTRY_MEMORY_PROFILE_CUSTOM: {
 			ret.len  = 0;
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 
 		default: {
 			ret.len = MB(64);
-			ret.len += mbuddy_get_bitmap_len(ret.len);
+			ret.len += buddy_sizeof(ret.len);
 		} break;
 	}
 

@@ -201,7 +201,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 
 	echo "Platform Compilation Test: Debug"
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		    -Wall -Wno-unused-function -O0    -g \
+		    -Wall -Wno-unused-function -O0 -disable-simpilfy-libcalls   -g \
 		    -D_DEBUG \
 		    -I "${INC}" -I "${MODINC}" \
 		    -o "${OUT_DBG}/template-compile-only"
@@ -211,7 +211,7 @@ if [[ "${COMPILE}" == "1" ]]; then
 
 	echo "Platform Compilation: Debug"
 	${CC_PLT} entry-x86_64-linux.c entry-x86_64.o -nostdlib \
-		-Wall -Wno-unused-function -O0    -g \
+		-Wall -Wno-unused-function -O0 -disable-simpilfy-libcalls   -g \
 		-D_DEBUG -DUSING_LIBC -lc \
 		-I "${INC}" -I "${MODINC}" \
 		-o "${OUT_DBG}/template"

@@ -1034,6 +1034,15 @@ __nostd_api pfn_memzero memzerou = memzerou_usz;
 		memsetu(s, csz, n);
 		return s;
 	}
+
+	void *memcpy(void *d,
+	             const void *s,
+	             unsigned long n)
+	{
+		memcpyu(d, (void*)s, (unsigned long)n);
+		return d;
+	}
+
 #endif
 
 #if defined(_MSC_VER)

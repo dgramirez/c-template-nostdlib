@@ -16,7 +16,7 @@ linux_setup_memory(b8 mem,
 
 local void
 linux_setup_platform_data(PlatformData *pdata,
-                          MBuddy *buddy);
+                          struct buddy *buddy);
 
 local void
 mmm_donuts(void *arg, TData *thread);

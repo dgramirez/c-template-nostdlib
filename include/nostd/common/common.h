@@ -4,6 +4,7 @@
 // All the core items
 #include "../core/core.h"
 
+#include "buddy.h"
 #include "cpuid_amd.h"
 #include "cpuid_intel.h"
 #include "cpuid.h"

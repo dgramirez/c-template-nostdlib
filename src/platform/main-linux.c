@@ -5,19 +5,20 @@ cmain(b8 args,
       b8 mem)
 {
 	PlatformData pdata;
-	MBuddy       mbuddy;
+	struct buddy *buddy;
 	TPData       tpdata = {0};
 
-	main_setup_memory(mem, &mbuddy);
+	buddy = buddy_embed(mem.data, mem.len);
+	mfreelist_init(&_sysfl, buddy_malloc(buddy, MB(4)), MB(4), 8);
 
 	cpuid_init();
-	linux_init_logger_terminal(mbuddy_alloc(&mbuddy, page_size),
+	linux_init_logger_terminal(buddy_malloc(buddy, page_size),
 	                           page_size,
 	                           LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
 	                           LOG_LEVEL_INFO     | LOG_LEVEL_SUCCESS |
 	                           LOG_LEVEL_ANOMALLY | LOG_LEVEL_WARNING |
 	                           LOG_LEVEL_ERROR    | LOG_LEVEL_FATAL);
-	linux_init_logger_file(mbuddy_alloc(&mbuddy, page_size),
+	linux_init_logger_file(buddy_malloc(buddy, page_size),
 	                       page_size,
 	                       0,
 	                       LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
@@ -25,7 +26,7 @@ cmain(b8 args,
 	                       LOG_LEVEL_ANOMALLY | LOG_LEVEL_WARNING |
 	                       LOG_LEVEL_ERROR    | LOG_LEVEL_FATAL   |
 	                       LOG_FORMAT_FILE_7Z);
-	linux_init_logger_network(mbuddy_alloc(&mbuddy, page_size),
+	linux_init_logger_network(buddy_malloc(buddy, page_size),
 	                          page_size,
 	                          0,
 	                          LOG_LEVEL_GOOFY    | LOG_LEVEL_DEBUG   |
@@ -42,7 +43,7 @@ cmain(b8 args,
 
 	tp_init_generic(&tpdata, 1, KB(16), KB(4), 0);
 
-	linux_setup_platform_data(&pdata, &mbuddy);
+	linux_setup_platform_data(&pdata, buddy);
 	pdata.tp_data = &tpdata;
 	app_init(&pdata);
 	while (pdata.run_app) {
@@ -96,12 +97,12 @@ linux_setup_shared_lib_app()
 
 local void
 linux_setup_platform_data(PlatformData *pdata,
-                          MBuddy       *mbuddy)
+                          struct buddy *buddy)
 {
 	// Buffer
-	pdata->bufapp.len  = mbuddy->len >> 2;
+	pdata->bufapp.len  = MB(16);
 	ceilto_pow2(pdata->bufapp.len);
-	pdata->bufapp.data = mbuddy_alloc(mbuddy, pdata->bufapp.len);
+	pdata->bufapp.data = buddy_malloc(buddy, pdata->bufapp.len);
 	if (!pdata->bufapp.data)
 		return;
 
